@@ -1,0 +1,38 @@
+# Generado por Unity, no debe versionarse
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+.utmp/
+[Rr]ecordings/
+UserSettings/
+sysinfo.txt
+*.apk
+*.aab
+
+# IDEs / proyectos generados
+.vs/
+.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.idea/
+
+# Crashlytics / builds locales
+crashlytics-build.properties
+/*.apk
+/*.mp4
