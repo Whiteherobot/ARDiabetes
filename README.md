@@ -34,7 +34,7 @@ git clone <url-del-repo> ARDiabetes
 3. Esperar a que Unity importe todos los assets y resuelva los paquetes (`Packages/manifest.json`
    ya lista todo: AR Foundation, ARCore, TextMeshPro, Input System, etc. — se descargan solos).
 4. Abrir la escena `Assets/Scenes/Main.unity` si no se abre sola.
-5. Dar **▶ Play** y cambiar a la pestaña **Game** para ver la app funcionando.
+5. Dar **Play** y cambiar a la pestaña **Game** para ver la app funcionando.
 
 > **Nota clave:** casi toda la UI se construye **por código en runtime**
 > (`Assets/Scripts/AppBootstrap.cs`), no hay prefabs de pantallas para arrastrar. En modo
@@ -124,7 +124,7 @@ ARDiabetes/
 
 ## Estado del proyecto (2026-07-08)
 
-### ✅ Completado y verificado en dispositivo real
+### Completado y verificado en dispositivo real
 - **Pantallas 1-4** (Inicio, Bienvenida con carrusel, Selección de perfil, Menú principal) —
   pulidas, responsivas (portrait **y** landscape con layouts propios, no reutilizados entre sí),
   con transiciones (fade+slide), animaciones de entrada escalonadas, fondo con blobs decorativos,
@@ -143,7 +143,7 @@ ARDiabetes/
   Confirmado funcionando (sesión inicializa y detecta) en un **Infinix NOTE 40 Pro** (dispositivo
   ARCore-certificado). Con fallback automático al visor 3D si el dispositivo no es compatible.
 
-### ⚠️ Caveat conocido de AR en dispositivos NO certificados por ARCore
+### Caveat conocido de AR en dispositivos NO certificados por ARCore
 En un dispositivo que Google no certifica para ARCore (verificado con una tablet genérica),
 ARCore puede mostrar **una sola vez** su propio diálogo nativo *"This application requires the
 latest version of Google Play Services for AR"* al entrar a la Experiencia AR — esto lo dispara
@@ -155,7 +155,7 @@ dispositivos sí compatibles, así que se revirtió: se prioriza que el AR funci
 en hardware compatible. En un dispositivo certificado (lista oficial de Google "ARCore supported
 devices") no aparece ningún diálogo y la cámara en vivo + tracking funcionan directo.
 
-### ⏳ Pendiente
+### Pendiente
 - Pantallas **5B (Libro Nutricional)**, **5C (Libro Clínico)**, **6 (Juegos y Retos)**,
   **7 (Progreso)**, **8 (Configuración)** — hoy muestran un *toast* "Próximamente".
 - Icono/skin propios para el mini-juego y progreso reales (hoy son solo el tile del menú).
