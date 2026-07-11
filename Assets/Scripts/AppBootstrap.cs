@@ -389,6 +389,9 @@ namespace ARDiabetes
                     arTitle = refs.Title; arToast = refs.Toast; arInfo = refs.Info; arInfoCard = refs.InfoCard;
                 }
                 if (arInfoCard != null) arInfoCard.gameObject.SetActive(false);
+                // Mientras ARCore arranca la sesión (puede tardar), mostrar feedback en vez del
+                // texto de compilación ("Vista 3D...") que quedaba pegado y se sentía como traba.
+                if (arHintText != null) arHintText.text = "Iniciando cámara…";
 
                 if (isBookAr)
                 {
