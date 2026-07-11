@@ -122,7 +122,7 @@ ARDiabetes/
 
 ---
 
-## Estado del proyecto (2026-07-08)
+## Estado del proyecto (2026-07-10)
 
 ### Completado y verificado en dispositivo real
 - **Pantallas 1-4** (Inicio, Bienvenida con carrusel, Selección de perfil, Menú principal) —
@@ -133,15 +133,18 @@ ARDiabetes/
 - **Libro Fisiológico completo:**
   - **Temas** (4 temas con icono + color de acento propio, tarjeta simplificada tipo la de Perfil).
   - **Detalle** (ilustración, descripción, botón **Escuchar** con narración TTS real por tema).
-  - **Experiencia AR**: visor 3D del páncreas (modelo real extraído del prototipo original) con
-    controles circulares (Info / Audio / Girar / Cerrar / Foto).
+  - **Experiencia AR**: cámara real con el modelo 3D del páncreas anclado en el espacio, controles
+    circulares (Info / Audio / Girar / Cerrar / Foto).
 - **Audio:** narración en español (4 clips, generados con gTTS ante la falta de API key de
   ElevenLabs) — confirmado funcionando en dispositivo.
 - **Iconos propios:** generados con Python/PIL (no dependen del arte del prototipo original).
 - **QR de prueba:** 4 marcadores + hoja A4 imprimible en `Marcadores/`.
-- **AR real (ARCore) integrado:** `ARController` con image tracking desde los QR generados.
-  Confirmado funcionando (sesión inicializa y detecta) en un **Infinix NOTE 40 Pro** (dispositivo
-  ARCore-certificado). Con fallback automático al visor 3D si el dispositivo no es compatible.
+- **AR real (ARCore) confirmado funcionando de punta a punta**: sesión inicializa, **cámara en
+  vivo visible** (se corrigió un bug donde el fondo decorativo propio de la app —degradado + blobs,
+  parte del mismo Canvas Overlay— tapaba el feed de la cámara real; ahora se oculta automáticamente
+  mientras el AR está activo) y el modelo 3D se ancla correctamente en el mundo real. Probado en un
+  **Infinix NOTE 40 Pro** y un **Samsung Galaxy A15 (SM-A156U)**, ambos ARCore-certificados. Con
+  fallback automático al visor 3D si el dispositivo no es compatible.
 
 ### Caveat conocido de AR en dispositivos NO certificados por ARCore
 En un dispositivo que Google no certifica para ARCore (verificado con una tablet genérica),

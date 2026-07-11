@@ -33,6 +33,7 @@ namespace ARDiabetes
 
         Canvas canvas;
         RectTransform root;
+        RectTransform globalBg;
         RectTransform pInicio, pBienvenida, pPerfil, pMenu;
         RectTransform pLibroTemas, pLibroDetalle, pLibroAR;
         RectTransform[] panels;
@@ -157,15 +158,21 @@ namespace ARDiabetes
             scaler.referenceResolution = Land ? new Vector2(1920, 1080) : new Vector2(1080, 1920);
             scaler.matchWidthOrHeight = Land ? 1f : 0f; // portrait: ancho; landscape: alto
 
-            var bg = UIKit.Img(canvas.transform, UIKit.VerticalGradient(UIKit.SkyTop, UIKit.Sky), "Background");
+            // Fondo global (degradado + blobs) agrupado para poder OCULTARLO durante el AR real:
+            // el Canvas Overlay se compone SIEMPRE encima de lo que rendericen las cámaras de
+            // escena, así que un fondo opaco aquí taparía el feed de la cámara por completo.
+            globalBg = UIKit.Node("GlobalBg", canvas.transform);
+            UIKit.Stretch(globalBg);
+
+            var bg = UIKit.Img(globalBg, UIKit.VerticalGradient(UIKit.SkyTop, UIKit.Sky), "Background");
             bg.preserveAspect = false;
             UIKit.Stretch(bg.rectTransform);
 
             // Blobs decorativos suaves (dan profundidad, menos plano)
-            AddBlob(canvas.transform, UIKit.Fisio, 0.05f, 0.86f, 620);
-            AddBlob(canvas.transform, UIKit.Nutri, 0.95f, 0.72f, 540);
-            AddBlob(canvas.transform, UIKit.Scan, 0.90f, 0.12f, 600);
-            AddBlob(canvas.transform, UIKit.Clin, 0.08f, 0.20f, 520);
+            AddBlob(globalBg, UIKit.Fisio, 0.05f, 0.86f, 620);
+            AddBlob(globalBg, UIKit.Nutri, 0.95f, 0.72f, 540);
+            AddBlob(globalBg, UIKit.Scan, 0.90f, 0.12f, 600);
+            AddBlob(globalBg, UIKit.Clin, 0.08f, 0.20f, 520);
 
             root = UIKit.Node("SafeRoot", canvas.transform);
             UIKit.Stretch(root);
@@ -257,6 +264,7 @@ namespace ARDiabetes
                     arController.Deactivate();
                     if (mainCam != null) mainCam.enabled = true;
                     if (arRaw != null) arRaw.enabled = modelViewer != null;
+                    if (globalBg != null) globalBg.gameObject.SetActive(true);
                 }
             }
             if (animate) { StartCoroutine(FadeIn(panel)); }
@@ -742,6 +750,7 @@ namespace ARDiabetes
                 if (arRaw != null) arRaw.enabled = false;
                 if (arBg != null) arBg.color = new Color(0, 0, 0, 0); // transparente: se ve la cámara
                 if (mainCam != null) mainCam.enabled = false;
+                if (globalBg != null) globalBg.gameObject.SetActive(false); // deja pasar el feed real
                 if (arHintText != null) arHintText.text = "Apunta la cámara al QR del tema";
             }
             else
@@ -749,6 +758,7 @@ namespace ARDiabetes
                 if (arRaw != null) arRaw.enabled = modelViewer != null;
                 if (arBg != null) arBg.color = UIKit.Hex("14212E"); // fondo oscuro para el visor 3D
                 if (mainCam != null) mainCam.enabled = true;
+                if (globalBg != null) globalBg.gameObject.SetActive(true);
                 if (arHintText != null) arHintText.text = "Vista 3D interactiva · toca Girar para explorar";
             }
         }
