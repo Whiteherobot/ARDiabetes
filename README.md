@@ -118,11 +118,12 @@ ARDiabetes/
 | `SafeArea.cs` | Ajusta la UI al área segura del dispositivo (notch / barra de estado). |
 | `ModelViewer.cs` | Visor 3D de respaldo: renderiza el modelo a una `RenderTexture` con cámara y luces propias (se usa cuando no hay AR real disponible). |
 | `Spinner.cs` | Gira el modelo 3D sobre su eje. |
-| `ARController.cs` | Rig de AR real (ARCore): `ARSession` + `XROrigin` + `ARCameraManager`/`Background` + `ARTrackedImageManager`. Crea la librería de imágenes en runtime desde los QR y coloca el modelo sobre el marcador detectado. Si el dispositivo no es compatible, cae automáticamente al `ModelViewer`. |
+| `ARController.cs` | Rig de AR real (ARCore): `ARSession` + `XROrigin` + `ARCameraManager`/`Background` + `ARTrackedImageManager`. **Una sola instancia compartida** para toda la app (tener una por libro confundía a ARCore a nivel nativo). Registra los marcadores de los 3 libros y `SetScope()` restringe cuáles puede detectar cada pantalla (un libro puntual, o todos en el escaneo genérico). Si el dispositivo no es compatible, cae automáticamente al `ModelViewer`. |
+| `BookDef.cs` | Estructura de datos con el contenido de un libro (título, color de acento, modelo 3D, temas, marcadores, narración). Permite que `AppBootstrap` construya las pantallas Temas/Detalle/AR de los 3 libros con el mismo código, en vez de repetirlo. |
 
 ---
 
-## Estado del proyecto (2026-07-10)
+## Estado del proyecto (2026-07-11)
 
 ### Completado y verificado en dispositivo real
 - **Pantallas 1-4** (Inicio, Bienvenida con carrusel, Selección de perfil, Menú principal) —
@@ -130,21 +131,42 @@ ARDiabetes/
   con transiciones (fade+slide), animaciones de entrada escalonadas, fondo con blobs decorativos,
   header enriquecido (avatar, nivel, racha, barra de progreso) y **barra de navegación inferior**
   (Inicio / Progreso / Config / Ayuda) fija.
-- **Libro Fisiológico completo:**
-  - **Temas** (4 temas con icono + color de acento propio, tarjeta simplificada tipo la de Perfil).
+- **Los 3 libros completos** (Fisiológico, Nutricional, Clínico), cada uno con:
+  - **Temas** (4 temas con icono + color de acento propio del libro).
   - **Detalle** (ilustración, descripción, botón **Escuchar** con narración TTS real por tema).
-  - **Experiencia AR**: cámara real con el modelo 3D del páncreas anclado en el espacio, controles
-    circulares (Info / Audio / Girar / Cerrar / Foto).
-- **Audio:** narración en español (4 clips, generados con gTTS ante la falta de API key de
-  ElevenLabs) — confirmado funcionando en dispositivo.
+  - **Experiencia AR**: cámara real con el modelo 3D correspondiente (páncreas / plato / glucómetro)
+    anclado en el espacio, controles circulares (Info / Audio / Girar / Cerrar / Foto).
+- **Escanear Página AR (5D)**: entrada directa desde el tile naranja del menú, sin pasar por
+  ningún libro. Detecta el marcador de cualquiera de los 12 temas (de los 3 libros) y muestra el
+  modelo y título correctos según la página escaneada.
+- **Captura de foto**: el botón de cámara en la Experiencia AR ya funciona (antes era un *toast*
+  "próximamente"). Toma el screenshot, muestra un flash animado y guarda el archivo en el
+  almacenamiento privado de la app (`Application.persistentDataPath/Fotos/`) — no en la galería
+  pública del dispositivo, pendiente si se quiere ese alcance a futuro.
+- **Audio:** narración en español, 12 clips (uno por tema de los 3 libros), generados con gTTS
+  ante la falta de API key de ElevenLabs — confirmado funcionando en dispositivo.
 - **Iconos propios:** generados con Python/PIL (no dependen del arte del prototipo original).
-- **QR de prueba:** 4 marcadores + hoja A4 imprimible en `Marcadores/`.
-- **AR real (ARCore) confirmado funcionando de punta a punta**: sesión inicializa, **cámara en
-  vivo visible** (se corrigió un bug donde el fondo decorativo propio de la app —degradado + blobs,
-  parte del mismo Canvas Overlay— tapaba el feed de la cámara real; ahora se oculta automáticamente
-  mientras el AR está activo) y el modelo 3D se ancla correctamente en el mundo real. Probado en un
+- **QR de prueba:** marcadores + hojas imprimibles en `Marcadores/` (12 en total, 4 por libro).
+- **AR real (ARCore) confirmado funcionando de punta a punta** en los 3 libros: sesión inicializa,
+  **cámara en vivo visible** y el modelo 3D se ancla correctamente en el mundo real. Probado en un
   **Infinix NOTE 40 Pro** y un **Samsung Galaxy A15 (SM-A156U)**, ambos ARCore-certificados. Con
   fallback automático al visor 3D si el dispositivo no es compatible.
+- **Arquitectura de AR corregida:** originalmente cada libro creaba su propio rig completo de AR
+  (`ARSession`/cámara/`ARTrackedImageManager`) — con los 3 libros más el escaneo genérico llegaban
+  a existir 4 sesiones AR simultáneas en la escena. AR Foundation solo soporta una sesión nativa
+  activa por proceso; esto se manifestó como un error intermitente de ARCore (*"camera was passed
+  NULL"*, feed de cámara negro). Se unificó en **un solo `ARController` compartido** con un método
+  `SetScope()` que restringe qué marcadores puede detectar cada pantalla, sin crear sesiones nuevas.
+
+### Caveat en investigación: feed de cámara negro tras testing intensivo
+Durante una sesión larga de pruebas en el Samsung Galaxy A15, el feed de cámara de la Experiencia
+AR empezó a quedar en negro (con el mismo error `camera was passed NULL` de ARCore) en **cualquier**
+libro, incluso uno que minutos antes había funcionado con cámara en vivo confirmada. `dumpsys
+media.camera` mostró que el servicio de cámara del dispositivo tuvo varias horas de crasheos
+(`Binder died unexpectedly`) esa madrugada por el uso repetido de abrir/cerrar la cámara en pruebas
+consecutivas, y el sistema quedó con carga anormalmente alta. Todo apunta a degradación del
+servicio de cámara del dispositivo, no a un bug de la app — **reiniciar el teléfono** antes de la
+próxima ronda de pruebas debería resolverlo. Pendiente confirmar con cámara sana.
 
 ### Caveat conocido de AR en dispositivos NO certificados por ARCore
 En un dispositivo que Google no certifica para ARCore (verificado con una tablet genérica),
@@ -159,9 +181,12 @@ en hardware compatible. En un dispositivo certificado (lista oficial de Google "
 devices") no aparece ningún diálogo y la cámara en vivo + tracking funcionan directo.
 
 ### Pendiente
-- Pantallas **5B (Libro Nutricional)**, **5C (Libro Clínico)**, **6 (Juegos y Retos)**,
-  **7 (Progreso)**, **8 (Configuración)** — hoy muestran un *toast* "Próximamente".
+- Pantallas **6 (Juegos y Retos)**, **7 (Progreso)**, **8 (Configuración)** — hoy muestran un
+  *toast* "Próximamente".
 - Icono/skin propios para el mini-juego y progreso reales (hoy son solo el tile del menú).
+- Confirmar en dispositivo, con la cámara ya sana (ver caveat arriba): Libro Clínico, el escaneo
+  genérico 5D y la captura de foto — el código y el flujo ya están, solo falta la verificación
+  visual final.
 - Probar el escaneo real del QR con imagen impresa (marcador) en un dispositivo ARCore.
 
 ---
