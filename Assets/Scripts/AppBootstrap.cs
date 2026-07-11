@@ -1159,9 +1159,13 @@ namespace ARDiabetes
         {
             string dir = System.IO.Path.Combine(Application.persistentDataPath, "Fotos");
             System.IO.Directory.CreateDirectory(dir);
-            string file = System.IO.Path.Combine(dir, "foto_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png");
+            // ScreenCapture.CaptureScreenshot antepone persistentDataPath incluso si ya le pasamos
+            // una ruta absoluta (en este dispositivo terminaba duplicando la ruta y el archivo
+            // nunca se guardaba donde la app después buscaba las fotos) — hay que darle una ruta
+            // relativa para que la arme bien sola.
+            string relFile = "Fotos/foto_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png";
             yield return new WaitForEndOfFrame();
-            ScreenCapture.CaptureScreenshot(file);
+            ScreenCapture.CaptureScreenshot(relFile);
             if (flashOverlay != null)
             {
                 float t = 0, dur = 0.22f;
