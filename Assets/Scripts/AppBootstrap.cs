@@ -38,7 +38,9 @@ namespace ARDiabetes
         RectTransform root;
         RectTransform globalBg;
         Image flashOverlay;
-        RectTransform pInicio, pBienvenida, pPerfil, pMenu, pScanAR;
+        RectTransform pInicio, pBienvenida, pPerfil, pMenu, pScanAR, pProgreso, pConfig;
+        RectTransform photoViewer;
+        RawImage photoViewerImg;
         RectTransform[] bookTemas = new RectTransform[3];
         RectTransform[] bookDetalle = new RectTransform[3];
         RectTransform[] bookAR = new RectTransform[3];
@@ -150,6 +152,7 @@ namespace ARDiabetes
             audioSrc = gameObject.AddComponent<AudioSource>();
             audioSrc.playOnAwake = false;
             mainCam = Camera.main;
+            AppState.TouchDailyStreak();
             BuildBooks();
 
             for (int b = 0; b < 3; b++)
@@ -231,11 +234,13 @@ namespace ARDiabetes
             }
             pScanAR = BuildScanAR();
             arPanels.Add(pScanAR);
+            pProgreso = BuildProgreso();
+            pConfig = BuildConfig();
             panels = new RectTransform[] { pInicio, pBienvenida, pPerfil, pMenu,
                 bookTemas[0], bookDetalle[0], bookAR[0],
                 bookTemas[1], bookDetalle[1], bookAR[1],
                 bookTemas[2], bookDetalle[2], bookAR[2],
-                pScanAR };
+                pScanAR, pProgreso, pConfig };
             ShowOnly(panels[Mathf.Clamp(shown, 0, panels.Length - 1)], false);
         }
 
@@ -245,7 +250,7 @@ namespace ARDiabetes
             EditorClearPreview();
             if (font != null) UIKit.Font = font;
             currentBook = 0; currentTopic = 1;
-            shown = Mathf.Clamp(index, 0, 13);
+            shown = Mathf.Clamp(index, 0, 15);
             BuildAll();
         }
 
@@ -303,6 +308,20 @@ namespace ARDiabetes
             flashOverlay.color = new Color(1, 1, 1, 0);
             flashOverlay.raycastTarget = false;
             UIKit.Stretch(flashOverlay.rectTransform);
+
+            // Visor de fotos: overlay modal (no es un "panel" de ShowOnly, flota encima de todo).
+            photoViewer = UIKit.Node("PhotoViewer", canvas.transform);
+            UIKit.Stretch(photoViewer);
+            var pvBg = UIKit.Box(photoViewer, new Color(0.04f, 0.07f, 0.11f, 0.94f), 0, "Bg");
+            UIKit.Stretch(pvBg.rectTransform);
+            photoViewerImg = new GameObject("Img", typeof(RectTransform)).AddComponent<RawImage>();
+            photoViewerImg.transform.SetParent(photoViewer, false);
+            photoViewerImg.raycastTarget = false;
+            UIKit.Frac(photoViewerImg.rectTransform, 0.06f, 0.14f, 0.94f, 0.90f);
+            var pvClose = UIKit.Button(photoViewer, "Cerrar", UIKit.Blue, Color.white, 34,
+                () => photoViewer.gameObject.SetActive(false), 38);
+            UIKit.Frac(R(pvClose), 0.30f, 0.035f, 0.70f, 0.10f);
+            photoViewer.gameObject.SetActive(false);
         }
 
         RectTransform Panel(string name)
@@ -337,8 +356,8 @@ namespace ARDiabetes
             System.Action[] act =
             {
                 () => ShowOnly(pMenu),
-                () => Toast("Progreso: próximamente"),
-                () => Toast("Configuración: próximamente"),
+                () => ShowOnly(pProgreso),
+                () => ShowOnly(pConfig),
                 () => Toast("Ayuda: próximamente")
             };
             for (int i = 0; i < 4; i++)
@@ -369,6 +388,8 @@ namespace ARDiabetes
                 if (starLabel != null) starLabel.text = AppState.Stars.ToString();
                 if (menuAvatar != null) menuAvatar.sprite = AvatarFor(AppState.Age);
             }
+            else if (panel == pProgreso) RefreshProgreso();
+            else if (panel == pConfig) RefreshConfig();
 
             // ¿A qué libro (0-2) o pantalla pertenece este panel? -1 si no es Detalle/AR.
             int book = Array.IndexOf(bookDetalle, panel);
@@ -701,15 +722,184 @@ namespace ARDiabetes
         {
             if (idx >= 0 && idx <= 2) { currentBook = idx; currentTopic = 0; ShowOnly(bookTemas[idx]); }
             else if (idx == 3) ShowOnly(pScanAR);
+            else if (idx == 5) ShowOnly(pProgreso);
             else Toast("Próximamente: " + label.Replace("\n", " "));
         }
 
-        void ProgressBar(Transform parent, float value, float x0, float y0, float x1, float y1)
+        Image ProgressBar(Transform parent, float value, float x0, float y0, float x1, float y1, Color? color = null)
         {
             var track = UIKit.Box(parent, UIKit.Hex("E2ECF5"), 16, "Track");
             UIKit.Frac(track.rectTransform, x0, y0, x1, y1);
-            var fill = UIKit.Box(track.transform, UIKit.Nutri, 16, "Fill");
+            var fill = UIKit.Box(track.transform, color ?? UIKit.Nutri, 16, "Fill");
             UIKit.Frac(fill.rectTransform, 0f, 0f, Mathf.Clamp01(value), 1f);
+            return fill;
+        }
+
+        // ============================================================
+        // 7 - PROGRESO
+        // ============================================================
+        RectTransform BuildProgreso()
+        {
+            var p = Panel("7_Progreso");
+            bool land = Land;
+            HeaderBand(p, UIKit.Prog, icChart, "Tu progreso", () => ShowOnly(pMenu), showBack: false);
+
+            var card = UIKit.Box(p, UIKit.Card, 40, "Stats");
+            if (!land) UIKit.Frac(card.rectTransform, 0.05f, 0.715f, 0.95f, 0.855f);
+            else UIKit.Frac(card.rectTransform, 0.04f, 0.64f, 0.96f, 0.80f);
+            UIKit.AddShadow(card, 40, 0.10f, -6, 6);
+            var statsTxt = UIKit.Text(card.transform, "", 30, UIKit.Navy, TextAlignmentOptions.Left, FontStyles.Normal);
+            UIKit.Frac(statsTxt, 0.06f, 0.5f, 0.94f, 0.92f);
+            var overallFill = ProgressBar(card.transform, 0f, 0.06f, 0.16f, 0.94f, 0.40f, UIKit.Prog);
+
+            var booksTitle = UIKit.Text(p, "Tus libros", 34, UIKit.Navy, TextAlignmentOptions.Left);
+            if (!land) UIKit.Frac(booksTitle, 0.06f, 0.665f, 0.6f, 0.705f);
+            else UIKit.Frac(booksTitle, 0.05f, 0.585f, 0.6f, 0.625f);
+
+            var bookFill = new Image[3];
+            var bookCount = new TMP_Text[3];
+            string[] bookLabels = { "Libro Fisiológico", "Libro Nutricional", "Libro Clínico" };
+            Color[] bookColors = { UIKit.Fisio, UIKit.Nutri, UIKit.Clin };
+            float rowsY0 = land ? 0.42f : 0.435f, rowsY1 = land ? 0.575f : 0.655f;
+            for (int i = 0; i < 3; i++)
+            {
+                var rc = UIKit.Cell(i, 1, 3, 0.06f, rowsY0, 0.94f, rowsY1, 0f, 0.03f);
+                var lbl = UIKit.Text(p, bookLabels[i], 28, UIKit.Navy, TextAlignmentOptions.Left, FontStyles.Normal);
+                UIKit.Frac(lbl, rc.xMin, rc.yMin + rc.height * 0.5f, rc.xMax, rc.yMax);
+                bookCount[i] = UIKit.Text(p, "0/4", 26, UIKit.Muted, TextAlignmentOptions.Right, FontStyles.Normal);
+                UIKit.Frac(bookCount[i], rc.xMax - 0.14f, rc.yMin + rc.height * 0.5f, rc.xMax, rc.yMax);
+                bookFill[i] = ProgressBar(p, 0f, rc.xMin, rc.yMin, rc.xMax, rc.yMin + rc.height * 0.38f, bookColors[i]);
+            }
+
+            var photoTitle = UIKit.Text(p, "Tus fotos", 34, UIKit.Navy, TextAlignmentOptions.Left);
+            if (!land) UIKit.Frac(photoTitle, 0.06f, 0.375f, 0.6f, 0.415f);
+            else UIKit.Frac(photoTitle, 0.05f, 0.35f, 0.6f, 0.39f);
+
+            var photoGrid = UIKit.Node("PhotoGrid", p);
+            if (!land) UIKit.Frac(photoGrid, 0.05f, 0.185f, 0.95f, 0.365f);
+            else UIKit.Frac(photoGrid, 0.04f, 0.19f, 0.96f, 0.34f);
+
+            BuildBottomNav(p, 1);
+            p.gameObject.AddComponent<ProgresoRefs>().Set(statsTxt, overallFill, bookFill, bookCount, photoGrid);
+            return p;
+        }
+
+        void RefreshProgreso()
+        {
+            if (pProgreso == null) return;
+            var refs = pProgreso.GetComponent<ProgresoRefs>();
+            if (refs == null) return;
+            int total = AppState.TopicsSeenCount();
+            if (refs.Stats != null)
+                refs.Stats.text = "Nivel " + AppState.Level + " · Racha " + AppState.Streak + (AppState.Streak == 1 ? " día" : " días")
+                    + "\n" + AppState.Stars + " estrellas · " + total + "/12 temas explorados";
+            if (refs.OverallFill != null) UIKit.Frac(refs.OverallFill, 0f, 0f, Mathf.Clamp01(total / 12f), 1f);
+            for (int i = 0; i < 3; i++)
+            {
+                int seen = AppState.TopicsSeenCount(i);
+                if (refs.BookFill != null && refs.BookFill[i] != null) UIKit.Frac(refs.BookFill[i], 0f, 0f, seen / 4f, 1f);
+                if (refs.BookCount != null && refs.BookCount[i] != null) refs.BookCount[i].text = seen + "/4";
+            }
+            RefreshPhotoGrid(refs.PhotoGrid);
+        }
+
+        void RefreshPhotoGrid(RectTransform grid)
+        {
+            if (grid == null) return;
+            for (int i = grid.childCount - 1; i >= 0; i--) Destroy(grid.GetChild(i).gameObject);
+
+            string[] files = new string[0];
+            string dir = System.IO.Path.Combine(Application.persistentDataPath, "Fotos");
+            if (System.IO.Directory.Exists(dir))
+            {
+                files = System.IO.Directory.GetFiles(dir, "*.png");
+                Array.Sort(files, StringComparer.Ordinal);
+                Array.Reverse(files); // más recientes primero (nombre = timestamp)
+            }
+            int n = Mathf.Min(files.Length, 6);
+            if (n == 0)
+            {
+                var msg = UIKit.Text(grid, "Aún no tomaste fotos. Andá a una Experiencia AR y tocá el botón de cámara.",
+                    28, UIKit.Muted, TextAlignmentOptions.Center, FontStyles.Normal);
+                UIKit.Stretch(msg.rectTransform);
+                return;
+            }
+            for (int i = 0; i < n; i++)
+            {
+                var rc = UIKit.Cell(i, 3, 2, 0f, 0f, 1f, 1f, 0.05f, 0.08f);
+                string path = files[i];
+                var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                tex.LoadImage(System.IO.File.ReadAllBytes(path));
+                var thumb = UIKit.Button(grid, "", UIKit.Card, UIKit.Navy, 20, () => OpenPhotoViewer(path), 0, false);
+                UIKit.Frac(R(thumb), rc.xMin, rc.yMin, rc.xMax, rc.yMax);
+                var raw = new GameObject("Thumb", typeof(RectTransform)).AddComponent<RawImage>();
+                raw.transform.SetParent(thumb.transform, false); raw.texture = tex; raw.raycastTarget = false;
+                UIKit.Stretch(raw.rectTransform, 4);
+            }
+        }
+
+        void OpenPhotoViewer(string path)
+        {
+            if (photoViewer == null || photoViewerImg == null) return;
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            tex.LoadImage(System.IO.File.ReadAllBytes(path));
+            photoViewerImg.texture = tex;
+            photoViewer.gameObject.SetActive(true);
+        }
+
+        // ============================================================
+        // 8 - CONFIGURACIÓN
+        // ============================================================
+        RectTransform BuildConfig()
+        {
+            var p = Panel("8_Config");
+            bool land = Land;
+            HeaderBand(p, UIKit.Muted, icGear, "Configuración", () => ShowOnly(pMenu), showBack: false);
+
+            float y0 = land ? 0.30f : 0.44f, y1 = land ? 0.78f : 0.85f;
+            var ageSub = ConfigRow(p, 0, 3, y0, y1, "Cambiar perfil de edad", AppState.AgeLabel(AppState.Age),
+                icHome, UIKit.Blue, () => ShowOnly(pPerfil));
+            var muteSub = ConfigRow(p, 1, 3, y0, y1, "Sonido y narración",
+                AppState.Muted ? "Silenciado · toca para activar" : "Activado · toca para silenciar",
+                icAudio, UIKit.Nutri, () => { AppState.Muted = !AppState.Muted; RefreshConfig(); });
+            ConfigRow(p, 2, 3, y0, y1, "Reiniciar progreso", "Borra estrellas, temas vistos y racha",
+                icRotate, UIKit.Scan, () => { AppState.ResetProgress(); RefreshConfig(); RefreshProgreso(); Toast("Progreso reiniciado"); });
+
+            var version = UIKit.Text(p, "AR Diabetes Tipo 1 · v1.0 · Endify", 24, UIKit.Muted, TextAlignmentOptions.Center, FontStyles.Normal);
+            if (!land) UIKit.Frac(version, 0.1f, 0.185f, 0.9f, 0.22f);
+            else UIKit.Frac(version, 0.1f, 0.16f, 0.9f, 0.20f);
+
+            BuildBottomNav(p, 2);
+            p.gameObject.AddComponent<ConfigRefs>().Set(ageSub, muteSub);
+            return p;
+        }
+
+        // Fila de Configuración: círculo+icono, título, subtítulo (devuelve el subtítulo para refrescarlo).
+        TMP_Text ConfigRow(RectTransform parent, int index, int total, float y0, float y1, string title, string sub,
+                           Sprite icon, Color accent, UnityEngine.Events.UnityAction onClick)
+        {
+            var rc = UIKit.Cell(index, 1, total, 0.05f, y0, 0.95f, y1, 0f, 0.03f);
+            var btn = UIKit.Button(parent, "", UIKit.Card, UIKit.Navy, 30, onClick);
+            UIKit.Frac(R(btn), rc.xMin, rc.yMin, rc.xMax, rc.yMax);
+            UIKit.AddShadow(btn.GetComponent<Image>(), 30, 0.08f, -4, 4);
+            var disc = UIKit.Img(btn.transform, UIKit.Circle(), "Disc"); disc.color = accent;
+            UIKit.Frac(disc, 0.03f, 0.2f, 0.20f, 0.8f);
+            var ic = UIKit.Img(btn.transform, icon, "Ic"); ic.color = Color.white;
+            UIKit.Frac(ic, 0.065f, 0.32f, 0.16f, 0.68f);
+            var tl = UIKit.Text(btn.transform, title, 32, UIKit.Navy, TextAlignmentOptions.Left);
+            UIKit.Frac(tl, 0.26f, 0.5f, 0.94f, 0.86f);
+            var sb = UIKit.Text(btn.transform, sub, 24, UIKit.Muted, TextAlignmentOptions.Left, FontStyles.Normal);
+            UIKit.Frac(sb, 0.26f, 0.14f, 0.94f, 0.48f);
+            return sb;
+        }
+
+        void RefreshConfig()
+        {
+            if (pConfig == null) return;
+            var refs = pConfig.GetComponent<ConfigRefs>();
+            if (refs == null) return;
+            if (refs.AgeSub != null) refs.AgeSub.text = AppState.AgeLabel(AppState.Age);
+            if (refs.MuteSub != null) refs.MuteSub.text = AppState.Muted ? "Silenciado · toca para activar" : "Activado · toca para silenciar";
         }
 
         // ============================================================
@@ -864,6 +1054,7 @@ namespace ARDiabetes
             refs.Desc.text = b.TopicDesc[currentTopic];
             refs.Band.color = b.Accent;
             detTitle = refs.Title; detDesc = refs.Desc; detBand = refs.Band; detImg = refs.Img;
+            if (AppState.MarkTopicSeen(currentBook, currentTopic)) Toast("+10 estrellas · nuevo tema explorado");
         }
 
         RectTransform BuildLibroAR(int book)
@@ -952,13 +1143,16 @@ namespace ARDiabetes
             }
         }
 
+        // Nota: usa Toast() (global, visible en cualquier pantalla) en vez de ShowARToast() porque
+        // este método lo llaman tanto el botón "Escuchar" de Detalle como el de la Experiencia AR.
         void PlayNarration()
         {
+            if (AppState.Muted) { Toast("Audio silenciado (activalo en Configuración)"); return; }
             var clips = isGenericScan ? null : books[currentBook].Narration;
             if (audioSrc == null || clips == null || currentTopic >= clips.Length || clips[currentTopic] == null)
-            { ShowARToast("Sin audio disponible"); return; }
-            if (audioSrc.isPlaying) { audioSrc.Stop(); ShowARToast("Audio detenido"); }
-            else { audioSrc.clip = clips[currentTopic]; audioSrc.Play(); ShowARToast("Reproduciendo narración…"); }
+            { Toast("Sin audio disponible"); return; }
+            if (audioSrc.isPlaying) { audioSrc.Stop(); Toast("Audio detenido"); }
+            else { audioSrc.clip = clips[currentTopic]; audioSrc.Play(); Toast("Reproduciendo narración…"); }
         }
 
         IEnumerator FlashAndSave()
@@ -1042,5 +1236,19 @@ namespace ARDiabetes
     {
         public Action<float> OnDragX;
         public void OnDrag(PointerEventData e) => OnDragX?.Invoke(e.delta.x);
+    }
+
+    class ProgresoRefs : MonoBehaviour
+    {
+        public TMP_Text Stats; public Image OverallFill; public Image[] BookFill; public TMP_Text[] BookCount;
+        public RectTransform PhotoGrid;
+        public void Set(TMP_Text stats, Image overallFill, Image[] bookFill, TMP_Text[] bookCount, RectTransform photoGrid)
+        { Stats = stats; OverallFill = overallFill; BookFill = bookFill; BookCount = bookCount; PhotoGrid = photoGrid; }
+    }
+
+    class ConfigRefs : MonoBehaviour
+    {
+        public TMP_Text AgeSub, MuteSub;
+        public void Set(TMP_Text ageSub, TMP_Text muteSub) { AgeSub = ageSub; MuteSub = muteSub; }
     }
 }
