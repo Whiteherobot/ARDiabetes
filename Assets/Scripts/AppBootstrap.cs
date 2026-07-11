@@ -1034,7 +1034,20 @@ namespace ARDiabetes
         void HeaderBand(RectTransform p, Color accent, Sprite icon, string title, UnityEngine.Events.UnityAction onBack, bool showBack = true)
         {
             var band = UIKit.Box(p, accent, 0, "Band");
-            UIKit.Frac(band.rectTransform, 0f, Land ? 0.86f : 0.885f, 1f, 1.01f);
+            // El panel vive dentro de SafeRoot (recortado por el notch/cámara "gota"), así que su
+            // borde superior local (fracción 1) NO es el borde real de la pantalla — antes eso
+            // dejaba una franja del fondo celeste asomando arriba de la banda de color, con pinta
+            // de "cortada". Se calcula cuánto hay que sobrepasar en fracción local del panel para
+            // que la banda llegue de verdad hasta el borde físico de la pantalla.
+            float topBleed = 1.01f;
+            if (Screen.height > 0)
+            {
+                float safeTop = Screen.safeArea.yMax / Screen.height;
+                float safeBottom = Screen.safeArea.yMin / Screen.height;
+                float panelFrac = safeTop - safeBottom;
+                if (panelFrac > 0.01f) topBleed = 1f + (1f - safeTop) / panelFrac + 0.01f;
+            }
+            UIKit.Frac(band.rectTransform, 0f, Land ? 0.86f : 0.885f, 1f, topBleed);
             if (showBack)
             {
                 var back = UIKit.Button(band.transform, "‹", new Color(1, 1, 1, 0.22f), Color.white, 26, onBack, 46);
