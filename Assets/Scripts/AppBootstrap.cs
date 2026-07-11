@@ -1059,8 +1059,10 @@ namespace ARDiabetes
                 var g = UIKit.Img(band.transform, icon, "Ico"); g.color = Color.white;
                 UIKit.Frac(g, showBack ? 0.135f : 0.05f, 0.24f, showBack ? 0.215f : 0.13f, 0.76f);
             }
+            // Centrado en TODA la franja (no en el hueco libre a la derecha del ícono/flecha),
+            // como en cualquier barra superior — antes quedaba corrido hacia la derecha.
             var t = UIKit.Text(band.transform, title, 50, Color.white);
-            UIKit.Frac(t, showBack ? 0.24f : 0.16f, 0.1f, 0.94f, 0.9f);
+            UIKit.Frac(t, 0.06f, 0.1f, 0.94f, 0.9f);
         }
 
         RectTransform BuildLibroTemas(int book)
