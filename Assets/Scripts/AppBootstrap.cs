@@ -38,9 +38,12 @@ namespace ARDiabetes
         RectTransform root;
         RectTransform globalBg;
         Image flashOverlay;
-        RectTransform pInicio, pBienvenida, pPerfil, pMenu, pScanAR, pProgreso, pConfig;
+        RectTransform pInicio, pBienvenida, pPerfil, pMenu, pScanAR, pProgreso, pConfig, pAyuda;
         RectTransform photoViewer;
         RawImage photoViewerImg;
+        RectTransform rewardBox;
+        TMP_Text rewardText;
+        Coroutine rewardCo;
         RectTransform[] bookTemas = new RectTransform[3];
         RectTransform[] bookDetalle = new RectTransform[3];
         RectTransform[] bookAR = new RectTransform[3];
@@ -180,7 +183,7 @@ namespace ARDiabetes
             arController.OnMarkerSeen = (b, t) =>
             {
                 var msgs = AppState.MarkMarkerScanned(b, t);
-                if (msgs.Count > 0) Toast(string.Join("\n", msgs));
+                if (msgs.Count > 0) ShowReward(string.Join("\n", msgs));
             };
 
             StartCoroutine(InitialBuild());
@@ -241,11 +244,12 @@ namespace ARDiabetes
             arPanels.Add(pScanAR);
             pProgreso = BuildProgreso();
             pConfig = BuildConfig();
+            pAyuda = BuildAyuda();
             panels = new RectTransform[] { pInicio, pBienvenida, pPerfil, pMenu,
                 bookTemas[0], bookDetalle[0], bookAR[0],
                 bookTemas[1], bookDetalle[1], bookAR[1],
                 bookTemas[2], bookDetalle[2], bookAR[2],
-                pScanAR, pProgreso, pConfig };
+                pScanAR, pProgreso, pConfig, pAyuda };
             ShowOnly(panels[Mathf.Clamp(shown, 0, panels.Length - 1)], false);
         }
 
@@ -255,7 +259,7 @@ namespace ARDiabetes
             EditorClearPreview();
             if (font != null) UIKit.Font = font;
             currentBook = 0; currentTopic = 1;
-            shown = Mathf.Clamp(index, 0, 15);
+            shown = Mathf.Clamp(index, 0, 16);
             BuildAll();
         }
 
@@ -327,6 +331,60 @@ namespace ARDiabetes
                 () => photoViewer.gameObject.SetActive(false), 38);
             UIKit.Frac(R(pvClose), 0.30f, 0.035f, 0.70f, 0.10f);
             photoViewer.gameObject.SetActive(false);
+
+            // Aviso de recompensa (estrellas/nivel/bonus): más llamativo que el toast genérico,
+            // con ícono + color dorado + animación de "pop" para que se note de verdad.
+            rewardBox = UIKit.Node("Reward", canvas.transform);
+            rewardBox.anchorMin = rewardBox.anchorMax = new Vector2(0.5f, 1f);
+            rewardBox.pivot = new Vector2(0.5f, 1f);
+            rewardBox.anchoredPosition = new Vector2(0, -170);
+            rewardBox.sizeDelta = new Vector2(860, 190);
+            var rewardBg = UIKit.Box(rewardBox, UIKit.Hex("FFC93C"), 40, "Bg");
+            UIKit.Stretch(rewardBg.rectTransform);
+            UIKit.AddShadow(rewardBg, 40, 0.30f, -10, 10);
+            var rewardStar = UIKit.Img(rewardBox, spStar, "Star"); rewardStar.preserveAspect = true;
+            UIKit.Frac(rewardStar, 0.07f, 0.30f, 0.28f, 0.78f);
+            rewardText = UIKit.Text(rewardBox, "", 34, UIKit.Hex("7A4B00"), TextAlignmentOptions.Left);
+            UIKit.Frac(rewardText, 0.32f, 0.10f, 0.94f, 0.90f);
+            rewardBox.gameObject.AddComponent<CanvasGroup>();
+            rewardBox.localScale = Vector3.zero;
+            rewardBox.gameObject.SetActive(false);
+        }
+
+        // Muestra un aviso de recompensa llamativo (estrellas ganadas, bonus, nivel) con un "pop"
+        // de escala + fade, muy distinto del toast genérico para que no pase desapercibido.
+        void ShowReward(string msg)
+        {
+            if (rewardText == null || rewardBox == null) return;
+            rewardText.text = msg;
+            if (rewardCo != null) StopCoroutine(rewardCo);
+            rewardCo = StartCoroutine(RewardPop());
+        }
+
+        IEnumerator RewardPop()
+        {
+            rewardBox.gameObject.SetActive(true);
+            var cg = rewardBox.GetComponent<CanvasGroup>();
+            float t = 0, dur = 0.32f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / dur);
+                float scale = k < 0.7f ? Mathf.Lerp(0.55f, 1.08f, k / 0.7f) : Mathf.Lerp(1.08f, 1f, (k - 0.7f) / 0.3f);
+                rewardBox.localScale = Vector3.one * scale;
+                cg.alpha = Mathf.Clamp01(k * 2.2f);
+                yield return null;
+            }
+            rewardBox.localScale = Vector3.one; cg.alpha = 1f;
+            yield return new WaitForSeconds(1.7f);
+            t = 0; dur = 0.28f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime;
+                cg.alpha = 1f - Mathf.Clamp01(t / dur);
+                yield return null;
+            }
+            rewardBox.gameObject.SetActive(false);
         }
 
         RectTransform Panel(string name)
@@ -363,7 +421,7 @@ namespace ARDiabetes
                 () => ShowOnly(pMenu),
                 () => ShowOnly(pProgreso),
                 () => ShowOnly(pConfig),
-                () => Toast("Ayuda: próximamente")
+                () => ShowOnly(pAyuda)
             };
             for (int i = 0; i < 4; i++)
             {
@@ -912,6 +970,46 @@ namespace ARDiabetes
         }
 
         // ============================================================
+        // 9 - AYUDA
+        // ============================================================
+        RectTransform BuildAyuda()
+        {
+            var p = Panel("9_Ayuda");
+            bool land = Land;
+            HeaderBand(p, UIKit.Scan, icQuestion, "Ayuda", () => ShowOnly(pMenu), showBack: false);
+
+            string[] q =
+            {
+                "¿Cómo escaneo una página?",
+                "¿Cómo gano estrellas?",
+                "La figura no aparece o se ve rara",
+                "¿Se guarda mi progreso?"
+            };
+            string[] a =
+            {
+                "Apuntá la cámara del celular a la página impresa del libro, sin taparla, hasta que aparezca la figura en 3D.",
+                "Leyendo cada tema, escuchando su narración y escaneando su página en AR. ¡Completar un libro entero te da un bono extra!",
+                "Apoyá la hoja impresa sobre una mesa quieta y mové solo el celular despacio alrededor. Si se ve muy grande o rara, alejate un poco de la hoja.",
+                "Sí, se guarda solo en este dispositivo. Podés reiniciarlo cuando quieras desde Configuración."
+            };
+            int cols = land ? 2 : 1, rows = land ? 2 : 4;
+            float y0 = land ? 0.20f : 0.135f, y1 = land ? 0.78f : 0.855f;
+            for (int i = 0; i < 4; i++)
+            {
+                var rc = UIKit.Cell(i, cols, rows, 0.05f, y0, 0.95f, y1, 0.03f, 0.03f);
+                var card = UIKit.Box(p, UIKit.Card, 30, "Faq" + i);
+                UIKit.Frac(card.rectTransform, rc.xMin, rc.yMin, rc.xMax, rc.yMax);
+                UIKit.AddShadow(card, 30, 0.08f, -4, 4);
+                var qt = UIKit.Text(card.transform, q[i], 30, UIKit.Navy, TextAlignmentOptions.Left);
+                UIKit.Frac(qt, 0.06f, 0.56f, 0.94f, 0.92f);
+                var at = UIKit.Text(card.transform, a[i], 24, UIKit.Muted, TextAlignmentOptions.Left, FontStyles.Normal);
+                UIKit.Frac(at, 0.06f, 0.06f, 0.94f, 0.52f);
+            }
+            BuildBottomNav(p, 3);
+            return p;
+        }
+
+        // ============================================================
         // 5A/5B/5C - LIBROS (Temas -> Detalle -> Experiencia AR)
         // ============================================================
         static readonly Color[] TopicAccent = { UIKit.Clin, UIKit.Fisio, UIKit.Nutri, UIKit.Prog };
@@ -1064,7 +1162,7 @@ namespace ARDiabetes
             refs.Band.color = b.Accent;
             detTitle = refs.Title; detDesc = refs.Desc; detBand = refs.Band; detImg = refs.Img;
             var msgs = AppState.MarkTopicSeen(currentBook, currentTopic);
-            if (msgs.Count > 0) Toast(string.Join("\n", msgs));
+            if (msgs.Count > 0) ShowReward(string.Join("\n", msgs));
         }
 
         RectTransform BuildLibroAR(int book)
@@ -1166,7 +1264,8 @@ namespace ARDiabetes
             {
                 audioSrc.clip = clips[currentTopic]; audioSrc.Play();
                 var msgs = AppState.MarkAudioHeard(currentBook, currentTopic);
-                Toast(msgs.Count > 0 ? string.Join("\n", msgs) : "Reproduciendo narración…");
+                if (msgs.Count > 0) ShowReward(string.Join("\n", msgs));
+                else Toast("Reproduciendo narración…");
             }
         }
 

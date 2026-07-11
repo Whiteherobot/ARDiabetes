@@ -177,6 +177,7 @@ public static class ProjectSetup
     [MenuItem("ARDiabetes/Preview/5D Escaneo genérico")] static void Pv13() => Prev(13);
     [MenuItem("ARDiabetes/Preview/7 Progreso")] static void Pv14() => Prev(14);
     [MenuItem("ARDiabetes/Preview/8 Configuración")] static void Pv15() => Prev(15);
+    [MenuItem("ARDiabetes/Preview/9 Ayuda")] static void Pv16() => Prev(16);
     [MenuItem("ARDiabetes/Preview/Limpiar preview")]
     static void PvClear()
     {
