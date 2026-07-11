@@ -11,6 +11,7 @@ namespace ARDiabetes
     {
         public RenderTexture Texture { get; private set; }
         Spinner spinner;
+        Camera cam;
         const int Layer = 2; // Ignore Raycast (no se usa para 3D en esta app)
 
         public static ModelViewer Create(GameObject modelPrefab, Color tint)
@@ -63,7 +64,7 @@ namespace ARDiabetes
 
             var camGo = new GameObject("PreviewCam");
             camGo.transform.SetParent(transform, false);
-            var cam = camGo.AddComponent<Camera>();
+            cam = camGo.AddComponent<Camera>();
             cam.cullingMask = 1 << Layer;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0, 0, 0, 0);
@@ -92,9 +93,18 @@ namespace ARDiabetes
 
             // Que la cámara principal NO dibuje el modelo.
             if (Camera.main != null) Camera.main.cullingMask &= ~(1 << Layer);
+
+            // Apagada por defecto: sin esto, cada libro sumaba una cámara renderizando su
+            // RenderTexture en TODO momento (incluso en pantallas donde nunca se ve), lo que
+            // se notaba como lentitud general de toda la app al pasar de 1 a 3 libros.
+            cam.enabled = false;
         }
 
         public void ToggleSpin() { if (spinner != null) spinner.spinning = !spinner.spinning; }
+
+        /// <summary>Enciende/apaga el render de este visor. Solo debe estar activo el del libro
+        /// que se está mostrando en ese momento.</summary>
+        public void SetActive(bool on) { if (cam != null) cam.enabled = on; }
 
         static void SetLayer(GameObject go, int layer)
         {

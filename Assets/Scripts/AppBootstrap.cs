@@ -174,6 +174,24 @@ namespace ARDiabetes
             arController.OnState = ARStateChanged;
             arController.OnMarkerTitle = t => { if (arTitle != null) arTitle.text = t; };
 
+            StartCoroutine(InitialBuild());
+        }
+
+        // En un arranque en frío en Android, Screen.width/height a veces reportan un valor
+        // transitorio (de la orientación "por defecto") durante los primeros frames, antes de
+        // asentarse en el tamaño real de la ventana. Construir de inmediato con ese valor deja
+        // toda la UI armada con las fracciones de la orientación equivocada — se ve "desplazada"
+        // hasta el próximo cambio real de orientación (que dispara un BuildAll correcto en
+        // Update). Se espera a que el tamaño quede igual en 2 frames seguidos antes de construir.
+        IEnumerator InitialBuild()
+        {
+            int w = Screen.width, h = Screen.height;
+            for (int i = 0; i < 10; i++)
+            {
+                yield return null;
+                if (Screen.width == w && Screen.height == h) break;
+                w = Screen.width; h = Screen.height;
+            }
             BuildAll();
             if (Environment.GetEnvironmentVariable("ARCAP") == "1" && !captureStarted)
             {
@@ -390,13 +408,21 @@ namespace ARDiabetes
                 }
                 arController.Activate();
             }
-            else if (arController != null)
+            else
             {
-                arController.Deactivate();
-                if (mainCam != null) mainCam.enabled = true;
-                if (arRaw != null) arRaw.enabled = modelViewer != null;
-                if (globalBg != null) globalBg.gameObject.SetActive(true);
+                modelViewer = null;
+                if (arController != null)
+                {
+                    arController.Deactivate();
+                    if (mainCam != null) mainCam.enabled = true;
+                    if (arRaw != null) arRaw.enabled = false;
+                    if (globalBg != null) globalBg.gameObject.SetActive(true);
+                }
             }
+            // Solo la cámara del visor 3D que se está mostrando debe renderizar: las otras 2 se
+            // apagan para no gastar GPU en pantallas donde ni siquiera son visibles.
+            for (int i = 0; i < modelViewers.Length; i++)
+                modelViewers[i]?.SetActive(modelViewers[i] == modelViewer);
             if (animate) { StartCoroutine(FadeIn(panel)); }
         }
 
