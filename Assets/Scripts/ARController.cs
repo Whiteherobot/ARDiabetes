@@ -37,6 +37,7 @@ namespace ARDiabetes
         GameObject spawned;
         string spawnedMarkerName;
         bool imagesAdded;
+        float userYaw;
         HashSet<string> scope; // null = sin filtro (ve cualquier marcador); usado para restringir el escaneo al libro actual
 
         /// <summary>Restringe qué marcadores puede detectar (null = todos, usado en el escaneo genérico 5D).
@@ -213,6 +214,8 @@ namespace ARDiabetes
             {
                 if (spawned != null) Destroy(spawned);
                 spawned = Instantiate(entry.Model);
+                spawned.transform.localScale = Vector3.one; // el prefab puede traer escala no uniforme (se veía "alargado")
+                userYaw = 0f;
                 ModelViewer.StripEmbeddedCamerasAndLights(spawned); // el FBX trae cámara/luz incrustada
                 var sh = Shader.Find("Standard");
                 if (sh != null)
@@ -240,8 +243,11 @@ namespace ARDiabetes
             if (spawned == null) return;
             spawned.transform.SetParent(img.transform, false);
             spawned.transform.localPosition = Vector3.zero;
-            spawned.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+            spawned.transform.localRotation = Quaternion.Euler(-90f, userYaw, 0f);
             spawned.SetActive(img.trackingState == TrackingState.Tracking || img.trackingState == TrackingState.Limited);
         }
+
+        /// <summary>Rota el modelo anclado (arrastre táctil), sin perder su anclaje sobre el marcador.</summary>
+        public void AddYaw(float degrees) { userYaw += degrees; }
     }
 }

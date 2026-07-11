@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
 namespace ARDiabetes
@@ -880,6 +881,14 @@ namespace ARDiabetes
             var p = Panel(name);
             var bg = UIKit.Box(p, UIKit.Hex("14212E"), 4, "ARbg"); UIKit.Stretch(bg.rectTransform);
 
+            // Arrastrar en cualquier parte de la pantalla (menos los botones, que van encima)
+            // rota la figura anclada — antes no se podía interactuar con el modelo real en AR.
+            var dragCatcher = UIKit.Box(p, new Color(0, 0, 0, 0), 0, "DragCatcher");
+            dragCatcher.raycastTarget = true;
+            UIKit.Stretch(dragCatcher.rectTransform);
+            var dr = dragCatcher.gameObject.AddComponent<DragRotate>();
+            dr.OnDragX = dx => { arController?.AddYaw(-dx * 0.3f); modelViewer?.AddYaw(-dx * 0.3f); };
+
             var raw = new GameObject("Model3D", typeof(RectTransform)).AddComponent<RawImage>();
             raw.transform.SetParent(p, false); raw.raycastTarget = false;
             var mv = viewerGetter();
@@ -1023,5 +1032,12 @@ namespace ARDiabetes
         public RawImage Raw; public Image Bg; public TMP_Text Hint, Title, Toast, Info; public RectTransform InfoCard;
         public void Set(RawImage raw, Image bg, TMP_Text hint, TMP_Text title, TMP_Text toast, TMP_Text info, RectTransform infoCard)
         { Raw = raw; Bg = bg; Hint = hint; Title = title; Toast = toast; Info = info; InfoCard = infoCard; }
+    }
+
+    // Arrastre horizontal sobre la pantalla de AR para rotar la figura (real o de respaldo).
+    class DragRotate : MonoBehaviour, IDragHandler
+    {
+        public Action<float> OnDragX;
+        public void OnDrag(PointerEventData e) => OnDragX?.Invoke(e.delta.x);
     }
 }

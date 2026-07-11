@@ -12,6 +12,7 @@ namespace ARDiabetes
         public RenderTexture Texture { get; private set; }
         Spinner spinner;
         Camera cam;
+        Transform holder;
         const int Layer = 2; // Ignore Raycast (no se usa para 3D en esta app)
 
         public static ModelViewer Create(GameObject modelPrefab, Color tint)
@@ -25,13 +26,15 @@ namespace ARDiabetes
 
         void Build(GameObject prefab, Color tint)
         {
-            var holder = new GameObject("Holder");
-            holder.transform.SetParent(transform, false);
+            var holderGo = new GameObject("Holder");
+            holderGo.transform.SetParent(transform, false);
+            holder = holderGo.transform;
 
             GameObject model = prefab != null ? Instantiate(prefab) : GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            model.transform.SetParent(holder.transform, false);
+            model.transform.SetParent(holder, false);
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = Quaternion.identity;
+            model.transform.localScale = Vector3.one; // el prefab puede traer escala no uniforme; normalizar antes de medir bounds
             SetLayer(model, Layer);
             StripEmbeddedCamerasAndLights(model);
 
@@ -49,18 +52,18 @@ namespace ARDiabetes
                 }
             }
 
-            // Auto-encuadre: centrar y escalar a ~2 unidades.
+            // Auto-encuadre: centrar y escalar a ~2 unidades (uniforme, ya con localScale=1 arriba).
             var rends = model.GetComponentsInChildren<Renderer>();
             if (rends.Length > 0)
             {
                 Bounds b = rends[0].bounds;
                 foreach (var r in rends) b.Encapsulate(r.bounds);
-                model.transform.position += holder.transform.position - b.center;
+                model.transform.position += holder.position - b.center;
                 float size = Mathf.Max(b.size.x, b.size.y, b.size.z);
-                if (size > 0.0001f) holder.transform.localScale = Vector3.one * (2f / size);
+                if (size > 0.0001f) holder.localScale = Vector3.one * (2f / size);
             }
 
-            spinner = holder.AddComponent<Spinner>();
+            spinner = holderGo.AddComponent<Spinner>();
 
             var camGo = new GameObject("PreviewCam");
             camGo.transform.SetParent(transform, false);
@@ -105,6 +108,9 @@ namespace ARDiabetes
         /// <summary>Enciende/apaga el render de este visor. Solo debe estar activo el del libro
         /// que se está mostrando en ese momento.</summary>
         public void SetActive(bool on) { if (cam != null) cam.enabled = on; }
+
+        /// <summary>Rota el modelo manualmente (arrastre táctil), independiente del auto-giro.</summary>
+        public void AddYaw(float degrees) { if (holder != null) holder.Rotate(Vector3.up, degrees, Space.World); }
 
         static void SetLayer(GameObject go, int layer)
         {
