@@ -106,9 +106,14 @@ namespace ARDiabetes
             }
         }
 
+        const int ArPanelIndex = 6; // pLibroAR en el arreglo `panels`
+
         void Update()
         {
-            if (canvas != null && Land != builtLandscape) BuildAll();
+            // No reconstruir la UI mientras se está en la Experiencia AR: un giro/tilt de la mano
+            // dispara un cambio Land/Portrait que recreaba el Canvas (incluido el fondo global,
+            // que vuelve a quedar visible/opaco) tapando el feed real de la cámara a mitad de sesión.
+            if (canvas != null && Land != builtLandscape && shown != ArPanelIndex) BuildAll();
         }
 
         void BuildAll()

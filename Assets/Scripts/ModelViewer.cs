@@ -32,6 +32,7 @@ namespace ARDiabetes
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = Quaternion.identity;
             SetLayer(model, Layer);
+            StripEmbeddedCamerasAndLights(model);
 
             // Material visible en Built-in (los materiales URP del prototipo se verían rosados).
             var sh = Shader.Find("Standard");
@@ -99,6 +100,16 @@ namespace ARDiabetes
         {
             go.layer = layer;
             foreach (Transform t in go.transform) SetLayer(t.gameObject, layer);
+        }
+
+        // Modelos exportados de Sketchfab/Meshy suelen traer incrustada la cámara (y a veces luces)
+        // de su escena de origen. Si se dejan activas, compiten con nuestras propias cámaras
+        // (Skybox por defecto tapando el feed real de la cámara AR). Se eliminan al instanciar.
+        public static void StripEmbeddedCamerasAndLights(GameObject model)
+        {
+            foreach (var cam in model.GetComponentsInChildren<Camera>(true)) UnityEngine.Object.Destroy(cam);
+            foreach (var lt in model.GetComponentsInChildren<Light>(true)) UnityEngine.Object.Destroy(lt);
+            foreach (var al in model.GetComponentsInChildren<AudioListener>(true)) UnityEngine.Object.Destroy(al);
         }
     }
 }

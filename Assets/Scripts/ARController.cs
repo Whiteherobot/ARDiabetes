@@ -58,7 +58,8 @@ namespace ARDiabetes
             arCam.backgroundColor = Color.black;
             arCam.nearClipPlane = 0.05f;
             arCam.farClipPlane = 20f;
-            camGo.AddComponent<ARCameraManager>();
+            var camMgr = camGo.AddComponent<ARCameraManager>();
+            camMgr.autoFocusRequested = true; // asegura autoenfoque (marcador impreso queda cerca, ~20-30cm)
             camGo.AddComponent<ARCameraBackground>();
 
             var tpd = camGo.AddComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>();
@@ -73,6 +74,15 @@ namespace ARDiabetes
 
             origin.Camera = arCam;
             origin.CameraFloorOffsetObject = offset;
+
+            // XROrigin.Awake() puede auto-provisionar una cámara de respaldo (clearFlags=Skybox)
+            // ANTES de que le asignemos la nuestra arriba. Esa cámara "fantasma" queda activa con
+            // el mismo depth que arCam y su Skybox se mezcla/tapa el feed real de la cámara AR.
+            // La eliminamos explícitamente por si acaso.
+            foreach (var stray in transform.GetComponentsInChildren<Camera>(true))
+            {
+                if (stray != arCam) { Debug.Log("[AR] Destruyendo cámara fantasma: " + stray.name); Destroy(stray.gameObject); }
+            }
 
             imgMgr = originGo.AddComponent<ARTrackedImageManager>();
             imgMgr.enabled = false;
@@ -160,6 +170,7 @@ namespace ARDiabetes
             if (spawned == null && modelPrefab != null)
             {
                 spawned = Instantiate(modelPrefab);
+                ModelViewer.StripEmbeddedCamerasAndLights(spawned); // el FBX trae cámara/luz incrustada
                 var sh = Shader.Find("Standard");
                 if (sh != null)
                 {
