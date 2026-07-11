@@ -15,6 +15,7 @@ namespace ARDiabetes
         public GameObject Model;
         public Color Tint;
         public string Title;
+        public int Book = -1, Topic = -1; // para avisar qué tema fue escaneado (progreso/estrellas)
     }
 
     /// <summary>
@@ -27,6 +28,7 @@ namespace ARDiabetes
     {
         public Action<bool> OnState;      // true = AR activo, false = no soportado
         public Action<string> OnMarkerTitle; // título del marcador actualmente mostrado (para 5D genérico)
+        public Action<int, int> OnMarkerSeen; // (libro, tema) la primera vez que se detecta ese marcador
 
         ARSession session;
         XROrigin origin;
@@ -239,6 +241,7 @@ namespace ARDiabetes
                 }
                 spawnedMarkerName = name;
                 if (entry.Title != null) OnMarkerTitle?.Invoke(entry.Title);
+                if (entry.Book >= 0 && entry.Topic >= 0) OnMarkerSeen?.Invoke(entry.Book, entry.Topic);
             }
             if (spawned == null) return;
             spawned.transform.SetParent(img.transform, false);

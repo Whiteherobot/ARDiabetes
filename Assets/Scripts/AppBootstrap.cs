@@ -51,8 +51,8 @@ namespace ARDiabetes
         bool builtLandscape;
         bool captureStarted;
 
-        TMP_Text starLabel, toast;
-        Image menuAvatar;
+        TMP_Text starLabel, toast, holaText, nivelText;
+        Image menuAvatar, nivelFill;
 
         // --- Libros (5A/5B/5C) ---
         BookDef[] books;
@@ -171,12 +171,17 @@ namespace ARDiabetes
                     var m = books[b].Markers[i];
                     if (m == null) continue;
                     string title = i < books[b].TopicTitle.Length ? books[b].TopicTitle[i] : books[b].Title;
-                    scanEntries.Add(new MarkerEntry { Marker = m, Model = books[b].Model, Tint = books[b].ModelTint, Title = title });
+                    scanEntries.Add(new MarkerEntry { Marker = m, Model = books[b].Model, Tint = books[b].ModelTint, Title = title, Book = b, Topic = i });
                 }
             }
             arController = ARController.CreateMulti(scanEntries.ToArray());
             arController.OnState = ARStateChanged;
             arController.OnMarkerTitle = t => { if (arTitle != null) arTitle.text = t; };
+            arController.OnMarkerSeen = (b, t) =>
+            {
+                var msgs = AppState.MarkMarkerScanned(b, t);
+                if (msgs.Count > 0) Toast(string.Join("\n", msgs));
+            };
 
             StartCoroutine(InitialBuild());
         }
@@ -387,6 +392,9 @@ namespace ARDiabetes
             {
                 if (starLabel != null) starLabel.text = AppState.Stars.ToString();
                 if (menuAvatar != null) menuAvatar.sprite = AvatarFor(AppState.Age);
+                if (holaText != null) holaText.text = AppState.GreetingFor(AppState.Age);
+                if (nivelText != null) nivelText.text = "Nivel " + AppState.Level + " · Racha " + AppState.Streak;
+                if (nivelFill != null) UIKit.Frac(nivelFill, 0f, 0f, Mathf.Clamp01(AppState.LevelProgress), 1f);
             }
             else if (panel == pProgreso) RefreshProgreso();
             else if (panel == pConfig) RefreshConfig();
@@ -673,11 +681,12 @@ namespace ARDiabetes
             menuAvatar = UIKit.Img(avBtn.transform, AvatarFor(AppState.Age), "Avatar"); menuAvatar.preserveAspect = true;
             UIKit.Frac(menuAvatar, 0.08f, 0.08f, 0.92f, 0.92f);
 
-            var hola = UIKit.Text(head.transform, "¡Hola!", 46, UIKit.Navy, TextAlignmentOptions.Left);
+            holaText = UIKit.Text(head.transform, AppState.GreetingFor(AppState.Age), 46, UIKit.Navy, TextAlignmentOptions.Left);
+            var hola = holaText;
             UIKit.Frac(hola, 0.23f, 0.55f, 0.74f, 0.92f);
-            var nivel = UIKit.Text(head.transform, "Nivel " + AppState.Level + " · Racha " + AppState.Streak, 30, UIKit.Muted, TextAlignmentOptions.Left, FontStyles.Normal);
-            UIKit.Frac(nivel, 0.23f, 0.30f, 0.74f, 0.52f);
-            ProgressBar(head.transform, AppState.LevelProgress, 0.23f, 0.12f, 0.74f, 0.24f);
+            nivelText = UIKit.Text(head.transform, "Nivel " + AppState.Level + " · Racha " + AppState.Streak, 30, UIKit.Muted, TextAlignmentOptions.Left, FontStyles.Normal);
+            UIKit.Frac(nivelText, 0.23f, 0.30f, 0.74f, 0.52f);
+            nivelFill = ProgressBar(head.transform, AppState.LevelProgress, 0.23f, 0.12f, 0.74f, 0.24f);
 
             var pill = UIKit.Box(head.transform, UIKit.Hex("FFF3D6"), 30, "Pill");
             UIKit.Frac(pill.rectTransform, 0.76f, 0.28f, 0.98f, 0.72f);
@@ -1054,7 +1063,8 @@ namespace ARDiabetes
             refs.Desc.text = b.TopicDesc[currentTopic];
             refs.Band.color = b.Accent;
             detTitle = refs.Title; detDesc = refs.Desc; detBand = refs.Band; detImg = refs.Img;
-            if (AppState.MarkTopicSeen(currentBook, currentTopic)) Toast("+10 estrellas · nuevo tema explorado");
+            var msgs = AppState.MarkTopicSeen(currentBook, currentTopic);
+            if (msgs.Count > 0) Toast(string.Join("\n", msgs));
         }
 
         RectTransform BuildLibroAR(int book)
@@ -1152,7 +1162,12 @@ namespace ARDiabetes
             if (audioSrc == null || clips == null || currentTopic >= clips.Length || clips[currentTopic] == null)
             { Toast("Sin audio disponible"); return; }
             if (audioSrc.isPlaying) { audioSrc.Stop(); Toast("Audio detenido"); }
-            else { audioSrc.clip = clips[currentTopic]; audioSrc.Play(); Toast("Reproduciendo narración…"); }
+            else
+            {
+                audioSrc.clip = clips[currentTopic]; audioSrc.Play();
+                var msgs = AppState.MarkAudioHeard(currentBook, currentTopic);
+                Toast(msgs.Count > 0 ? string.Join("\n", msgs) : "Reproduciendo narración…");
+            }
         }
 
         IEnumerator FlashAndSave()
