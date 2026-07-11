@@ -243,7 +243,9 @@ namespace ARDiabetes
             if (spawned == null) return;
             spawned.transform.SetParent(img.transform, false);
             spawned.transform.localPosition = Vector3.zero;
-            spawned.transform.localRotation = Quaternion.Euler(-90f, userYaw, 0f);
+            // De pie sobre la página (perpendicular al marcador), no acostado: antes -90° en X
+            // tumbaba el modelo sobre el marcador. userYaw permite girarlo con el dedo (AddYaw).
+            spawned.transform.localRotation = Quaternion.Euler(0f, userYaw, 0f);
             spawned.SetActive(img.trackingState == TrackingState.Tracking || img.trackingState == TrackingState.Limited);
         }
 
