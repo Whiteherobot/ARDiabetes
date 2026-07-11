@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
@@ -7,32 +8,69 @@ using Unity.XR.CoreUtils;
 
 namespace ARDiabetes
 {
+    /// <summary>Un marcador (QR) con el modelo/tinte/título que debe mostrar al detectarse.</summary>
+    public class MarkerEntry
+    {
+        public Texture2D Marker;
+        public GameObject Model;
+        public Color Tint;
+        public string Title;
+    }
+
     /// <summary>
     /// Rig de AR (ARCore) con image tracking: monta ARSession + XROrigin + cámara AR + ARTrackedImageManager,
-    /// crea una librería de imágenes en runtime desde los QR y coloca el modelo sobre el marcador detectado.
+    /// crea una librería de imágenes en runtime desde los QR y coloca el modelo correspondiente al marcador
+    /// detectado (soporta varios marcadores/modelos a la vez, para el escaneo genérico de cualquier libro).
     /// Si el dispositivo no soporta AR (p.ej. desktop), avisa por OnState(false) para caer al visor 3D.
     /// </summary>
     public class ARController : MonoBehaviour
     {
-        public Action<bool> OnState;   // true = AR activo, false = no soportado
+        public Action<bool> OnState;      // true = AR activo, false = no soportado
+        public Action<string> OnMarkerTitle; // título del marcador actualmente mostrado (para 5D genérico)
 
         ARSession session;
         XROrigin origin;
         Camera arCam;
         ARTrackedImageManager imgMgr;
-        GameObject modelPrefab;
-        Color tint;
-        Texture2D[] markers;
+        Dictionary<string, MarkerEntry> byName = new Dictionary<string, MarkerEntry>();
+        Texture2D[] allMarkers;
         GameObject spawned;
+        string spawnedMarkerName;
         bool imagesAdded;
-        bool notified;
+        HashSet<string> scope; // null = sin filtro (ve cualquier marcador); usado para restringir el escaneo al libro actual
 
-        public static ARController Create(GameObject modelPrefab, Color tint, Texture2D[] markers)
+        /// <summary>Restringe qué marcadores puede detectar (null = todos, usado en el escaneo genérico 5D).
+        /// Limpia el modelo mostrado, para no arrastrar el de un libro/tema anterior al cambiar de pantalla.</summary>
+        public void SetScope(IEnumerable<string> names)
+        {
+            scope = names == null ? null : new HashSet<string>(names);
+            if (spawned != null) Destroy(spawned);
+            spawned = null;
+            spawnedMarkerName = null;
+        }
+
+        /// <summary>Un solo modelo/tinte para todos los marcadores dados (uso normal: un libro).</summary>
+        public static ARController Create(GameObject model, Color tint, Texture2D[] markers, string title = null)
+        {
+            var entries = new List<MarkerEntry>();
+            if (markers != null)
+                foreach (var m in markers)
+                    if (m != null) entries.Add(new MarkerEntry { Marker = m, Model = model, Tint = tint, Title = title });
+            return CreateMulti(entries.ToArray());
+        }
+
+        /// <summary>Varios marcadores, cada uno con su propio modelo/tinte/título (escaneo genérico 5D).</summary>
+        public static ARController CreateMulti(MarkerEntry[] entries)
         {
             var go = new GameObject("ARRig");
             go.SetActive(false); // INACTIVO antes de construir: difiere los Awake hasta tener todo cableado
             var c = go.AddComponent<ARController>();
-            c.modelPrefab = modelPrefab; c.tint = tint; c.markers = markers;
+            c.allMarkers = new Texture2D[entries.Length];
+            for (int i = 0; i < entries.Length; i++)
+            {
+                c.allMarkers[i] = entries[i].Marker;
+                if (entries[i].Marker != null) c.byName[entries[i].Marker.name] = entries[i];
+            }
             c.Build();
             return c;
         }
@@ -141,13 +179,13 @@ namespace ARDiabetes
             Debug.Log("[AR] AR ACTIVO state=" + ARSession.state);
             OnState?.Invoke(true);
 
-            if (!imagesAdded && imgMgr != null && markers != null)
+            if (!imagesAdded && imgMgr != null && allMarkers != null)
             {
                 var lib = imgMgr.CreateRuntimeLibrary();
                 if (lib is MutableRuntimeReferenceImageLibrary mlib)
                 {
                     imgMgr.referenceLibrary = mlib;
-                    foreach (var tex in markers)
+                    foreach (var tex in allMarkers)
                     {
                         if (tex == null) continue;
                         try { mlib.ScheduleAddImageWithValidationJob(tex, tex.name, 0.12f); }
@@ -167,14 +205,19 @@ namespace ARDiabetes
 
         void Place(ARTrackedImage img)
         {
-            if (spawned == null && modelPrefab != null)
+            string name = img.referenceImage.name;
+            if (scope != null && !scope.Contains(name)) return;
+            if (!byName.TryGetValue(name, out var entry) || entry.Model == null) return;
+
+            if (spawnedMarkerName != name)
             {
-                spawned = Instantiate(modelPrefab);
+                if (spawned != null) Destroy(spawned);
+                spawned = Instantiate(entry.Model);
                 ModelViewer.StripEmbeddedCamerasAndLights(spawned); // el FBX trae cámara/luz incrustada
                 var sh = Shader.Find("Standard");
                 if (sh != null)
                 {
-                    var mat = new Material(sh) { color = tint };
+                    var mat = new Material(sh) { color = entry.Tint };
                     foreach (var r in spawned.GetComponentsInChildren<Renderer>())
                     {
                         var mats = new Material[r.sharedMaterials.Length];
@@ -182,7 +225,7 @@ namespace ARDiabetes
                         r.sharedMaterials = mats;
                     }
                 }
-                // Auto-escala a ~8 cm sobre el marcador
+                // Auto-escala a ~9 cm sobre el marcador
                 var rends = spawned.GetComponentsInChildren<Renderer>();
                 if (rends.Length > 0)
                 {
@@ -191,6 +234,8 @@ namespace ARDiabetes
                     float size = Mathf.Max(b.size.x, b.size.y, b.size.z);
                     if (size > 0.0001f) spawned.transform.localScale *= 0.09f / size;
                 }
+                spawnedMarkerName = name;
+                if (entry.Title != null) OnMarkerTitle?.Invoke(entry.Title);
             }
             if (spawned == null) return;
             spawned.transform.SetParent(img.transform, false);

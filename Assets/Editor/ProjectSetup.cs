@@ -55,7 +55,11 @@ public static class ProjectSetup
         boot.spStar        = L("Assets/Imagenes/Diseño/Botones/Icon_Estrella.png");
         boot.spPancreas    = L("Assets/Imagenes/Diseño/Icon_Pancreas.png");
         boot.pancreasModel = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Imagenes/QR/Pancreas.fbx");
+        boot.platoModel    = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Imagenes/QR/Plato.fbx");
+        boot.glucoModel    = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Imagenes/QR/Gluco.fbx");
         if (boot.pancreasModel == null) Debug.LogWarning("[ProjectSetup] Pancreas.fbx no encontrado");
+        if (boot.platoModel == null) Debug.LogWarning("[ProjectSetup] Plato.fbx no encontrado");
+        if (boot.glucoModel == null) Debug.LogWarning("[ProjectSetup] Gluco.fbx no encontrado");
 
         boot.icInfo     = L("Assets/Imagenes/UI/ic_info.png");
         boot.icAudio    = L("Assets/Imagenes/UI/ic_audio.png");
@@ -69,18 +73,24 @@ public static class ProjectSetup
         boot.icHome     = L("Assets/Imagenes/UI/ic_home.png");
         boot.icBook     = L("Assets/Imagenes/UI/ic_book.png");
         boot.icPancreas = L("Assets/Imagenes/UI/ic_pancreas.png");
+        boot.icPlate    = L("Assets/Imagenes/UI/ic_plate.png");
+        boot.icBread    = L("Assets/Imagenes/UI/ic_bread.png");
+        boot.icApple    = L("Assets/Imagenes/UI/ic_apple.png");
+        boot.icClock    = L("Assets/Imagenes/UI/ic_clock.png");
+        boot.icSyringe  = L("Assets/Imagenes/UI/ic_syringe.png");
+        boot.icAlert    = L("Assets/Imagenes/UI/ic_alert.png");
+        boot.icCalendar = L("Assets/Imagenes/UI/ic_calendar.png");
 
-        boot.narracion = new AudioClip[4];
-        for (int i = 0; i < 4; i++)
+        boot.narracion = new AudioClip[12];
+        for (int i = 0; i < 12; i++)
         {
             boot.narracion[i] = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/Audio/Narracion/narracion_{i}.wav");
             if (boot.narracion[i] == null) Debug.LogWarning($"[ProjectSetup] narracion_{i}.wav no encontrado");
         }
 
-        string[] mk = { "qr_diabetes", "qr_pancreas", "qr_insulina", "qr_funciona" };
-        boot.markers = new Texture2D[mk.Length];
-        for (int i = 0; i < mk.Length; i++)
-            boot.markers[i] = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Markers/{mk[i]}.png");
+        boot.markersFisio = LoadMarkers("qr_diabetes", "qr_pancreas", "qr_insulina", "qr_funciona");
+        boot.markersNutri = LoadMarkers("qr_nutri_plato", "qr_nutri_carbohidratos", "qr_nutri_recomendados", "qr_nutri_habitos");
+        boot.markersClinico = LoadMarkers("qr_clinico_insulina", "qr_clinico_sintomas", "qr_clinico_monitoreo", "qr_clinico_cuidados");
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);
@@ -155,9 +165,16 @@ public static class ProjectSetup
     [MenuItem("ARDiabetes/Preview/2 Bienvenida")] static void Pv1() => Prev(1);
     [MenuItem("ARDiabetes/Preview/3 Perfil")] static void Pv2() => Prev(2);
     [MenuItem("ARDiabetes/Preview/4 Menú")] static void Pv3() => Prev(3);
-    [MenuItem("ARDiabetes/Preview/5A Temas")] static void Pv4() => Prev(4);
-    [MenuItem("ARDiabetes/Preview/5A Detalle")] static void Pv5() => Prev(5);
-    [MenuItem("ARDiabetes/Preview/5A Experiencia AR")] static void Pv6() => Prev(6);
+    [MenuItem("ARDiabetes/Preview/5A Fisiológico/Temas")] static void Pv4() => Prev(4);
+    [MenuItem("ARDiabetes/Preview/5A Fisiológico/Detalle")] static void Pv5() => Prev(5);
+    [MenuItem("ARDiabetes/Preview/5A Fisiológico/Experiencia AR")] static void Pv6() => Prev(6);
+    [MenuItem("ARDiabetes/Preview/5B Nutricional/Temas")] static void Pv7() => Prev(7);
+    [MenuItem("ARDiabetes/Preview/5B Nutricional/Detalle")] static void Pv8() => Prev(8);
+    [MenuItem("ARDiabetes/Preview/5B Nutricional/Experiencia AR")] static void Pv9() => Prev(9);
+    [MenuItem("ARDiabetes/Preview/5C Clínico/Temas")] static void Pv10() => Prev(10);
+    [MenuItem("ARDiabetes/Preview/5C Clínico/Detalle")] static void Pv11() => Prev(11);
+    [MenuItem("ARDiabetes/Preview/5C Clínico/Experiencia AR")] static void Pv12() => Prev(12);
+    [MenuItem("ARDiabetes/Preview/5D Escaneo genérico")] static void Pv13() => Prev(13);
     [MenuItem("ARDiabetes/Preview/Limpiar preview")]
     static void PvClear()
     {
@@ -246,6 +263,17 @@ public static class ProjectSetup
             Debug.Log("[ARF] compatible=" + string.Join(",", p.versions.compatible));
         }
         else Debug.Log("[ARF] search failed: " + (req.Error != null ? req.Error.message : "?"));
+    }
+
+    static Texture2D[] LoadMarkers(params string[] names)
+    {
+        var arr = new Texture2D[names.Length];
+        for (int i = 0; i < names.Length; i++)
+        {
+            arr[i] = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Markers/{names[i]}.png");
+            if (arr[i] == null) Debug.LogWarning($"[ProjectSetup] marcador no encontrado: {names[i]}.png");
+        }
+        return arr;
     }
 
     static Sprite L(string path)

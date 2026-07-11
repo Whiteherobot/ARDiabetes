@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -7,9 +8,9 @@ using TMPro;
 namespace ARDiabetes
 {
     /// <summary>
-    /// Pantallas 1-4 con layout responsivo (anclaje por fracciones) que llena la pantalla y se
-    /// reconstruye al rotar, soportando portrait y landscape.
-    /// 1) INICIO  2) BIENVENIDA (carrusel)  3) PERFIL  4) MENÚ PRINCIPAL.
+    /// Todas las pantallas de la app, construidas por código con anclaje por fracciones
+    /// (responsivo portrait/landscape). 1) INICIO 2) BIENVENIDA (carrusel) 3) PERFIL 4) MENÚ
+    /// 5A/5B/5C) Temas → Detalle → Experiencia AR de cada libro. 5D) Escaneo genérico (cualquier página).
     /// </summary>
     public class AppBootstrap : MonoBehaviour
     {
@@ -20,23 +21,29 @@ namespace ARDiabetes
         public Sprite spIconFisio, spIconNutri, spIconClinico, spIconScan, spIconJuegos, spIconProgreso;
         public Sprite spStar;
         public Sprite spPancreas;
-        public GameObject pancreasModel;
+        public GameObject pancreasModel, platoModel, glucoModel;
         public TMP_FontAsset font;
 
         [Header("Iconos UI")]
         public Sprite icInfo, icAudio, icRotate, icClose, icCamera, icChart, icQuestion, icDrop, icGear, icHome, icBook, icPancreas;
-        [Header("Audio narración (por tema)")]
+        public Sprite icPlate, icBread, icApple, icClock, icSyringe, icAlert, icCalendar;
+        [Header("Audio narración (12: 4 por libro)")]
         public AudioClip[] narracion;
         AudioSource audioSrc;
-        [Header("Marcadores AR (QR)")]
-        public Texture2D[] markers;
+        [Header("Marcadores AR (QR) — 4 por libro, Fisiológico/Nutricional/Clínico")]
+        public Texture2D[] markersFisio, markersNutri, markersClinico;
 
         Canvas canvas;
         RectTransform root;
         RectTransform globalBg;
-        RectTransform pInicio, pBienvenida, pPerfil, pMenu;
-        RectTransform pLibroTemas, pLibroDetalle, pLibroAR;
+        Image flashOverlay;
+        RectTransform pInicio, pBienvenida, pPerfil, pMenu, pScanAR;
+        RectTransform[] bookTemas = new RectTransform[3];
+        RectTransform[] bookDetalle = new RectTransform[3];
+        RectTransform[] bookAR = new RectTransform[3];
         RectTransform[] panels;
+        HashSet<RectTransform> arPanels = new HashSet<RectTransform>();
+        HashSet<RectTransform> detallePanels = new HashSet<RectTransform>();
         int shown;
         bool builtLandscape;
         bool captureStarted;
@@ -44,33 +51,22 @@ namespace ARDiabetes
         TMP_Text starLabel, toast;
         Image menuAvatar;
 
-        // --- Libro Fisiológico (5A) ---
+        // --- Libros (5A/5B/5C) ---
+        BookDef[] books;
+        ModelViewer[] modelViewers = new ModelViewer[3];
+
+        // "Actuales": se reasignan al entrar a cada pantalla de Detalle/AR (índice 0-2 = libro, 3 = escaneo genérico)
         ModelViewer modelViewer;
         ARController arController;
         RawImage arRaw;
         Image arBg;
         TMP_Text arHintText;
         Camera mainCam;
-        int currentTopic;
+        int currentBook, currentTopic;
+        bool isGenericScan;
         TMP_Text detTitle, detDesc, arTitle, arInfo, arToast;
         Image detImg, detBand;
         RectTransform arInfoCard;
-
-        static readonly string[] TopicTitles =
-        {
-            "¿Qué es la diabetes tipo 1?", "El páncreas", "Insulina y glucosa", "Cómo funciona"
-        };
-        static readonly string[] TopicDesc =
-        {
-            "La diabetes tipo 1 aparece cuando el cuerpo casi no produce insulina, la hormona que nos da energía. ¡Aprende a conocerla y cuidarte!",
-            "El páncreas es el órgano que fabrica la insulina en tu cuerpo. Explóralo en 3D y descubre cómo es por dentro.",
-            "La insulina es como una llave que deja entrar la glucosa (energía) a tus células para que funcionen.",
-            "Descubre cómo trabajan juntos el páncreas, la insulina y la glucosa para darte energía cada día."
-        };
-        static readonly string[] TopicSub =
-        {
-            "Conoce la enfermedad", "El órgano de la insulina", "Cómo obtienes energía", "Todo trabaja en equipo"
-        };
 
         bool Land => Screen.width > Screen.height;
         static RectTransform R(Component c) => (RectTransform)c.transform;
@@ -86,18 +82,98 @@ namespace ARDiabetes
             }
         }
 
+        // ============================================================
+        // Contenido de los 3 libros
+        // ============================================================
+        void BuildBooks()
+        {
+            AudioClip N(int i) => (narracion != null && i < narracion.Length) ? narracion[i] : null;
+
+            books = new BookDef[3];
+            books[0] = new BookDef
+            {
+                Title = "Libro Fisiológico", Accent = UIKit.Fisio, HeroIcon = spPancreas,
+                Model = pancreasModel, ModelTint = UIKit.Hex("C86B6B"),
+                TopicTitle = new[] { "¿Qué es la diabetes tipo 1?", "El páncreas", "Insulina y glucosa", "Cómo funciona" },
+                TopicSub = new[] { "Conoce la enfermedad", "El órgano de la insulina", "Cómo obtienes energía", "Todo trabaja en equipo" },
+                TopicDesc = new[]
+                {
+                    "La diabetes tipo 1 aparece cuando el cuerpo casi no produce insulina, la hormona que nos da energía. ¡Aprende a conocerla y cuidarte!",
+                    "El páncreas es el órgano que fabrica la insulina en tu cuerpo. Explóralo en 3D y descubre cómo es por dentro.",
+                    "La insulina es como una llave que deja entrar la glucosa (energía) a tus células para que funcionen.",
+                    "Descubre cómo trabajan juntos el páncreas, la insulina y la glucosa para darte energía cada día."
+                },
+                TopicIcon = new[] { icQuestion, icPancreas, icDrop, icGear },
+                Markers = markersFisio,
+                Narration = new[] { N(0), N(1), N(2), N(3) },
+            };
+            books[1] = new BookDef
+            {
+                Title = "Libro Nutricional", Accent = UIKit.Nutri, HeroIcon = spIconNutri,
+                Model = platoModel, ModelTint = UIKit.Hex("7CB86F"),
+                TopicTitle = new[] { "Plato saludable", "Carbohidratos", "Alimentos recomendados", "Hábitos saludables" },
+                TopicSub = new[] { "Equilibra tu comida", "La energía más rápida", "Elige mejor", "Cuídate cada día" },
+                TopicDesc = new[]
+                {
+                    "El plato saludable te ayuda a equilibrar tu comida: mitad de vegetales, un cuarto de proteína y un cuarto de carbohidratos. Así tu glucosa sube de forma más estable.",
+                    "Los carbohidratos son la energía que más rápido sube tu glucosa. Aprende a reconocerlos en el pan, el arroz, la pasta y las frutas.",
+                    "Las verduras, las proteínas magras y las grasas saludables te ayudan a mantener tu glucosa estable durante más tiempo.",
+                    "Comer a las mismas horas, tomar agua y evitar azúcares en exceso hacen que tu diabetes sea mucho más fácil de controlar cada día."
+                },
+                TopicIcon = new[] { icPlate, icBread, icApple, icClock },
+                Markers = markersNutri,
+                Narration = new[] { N(4), N(5), N(6), N(7) },
+            };
+            books[2] = new BookDef
+            {
+                Title = "Libro Clínico", Accent = UIKit.Clin, HeroIcon = spIconClinico,
+                Model = glucoModel, ModelTint = UIKit.Hex("4E8FD1"),
+                TopicTitle = new[] { "Uso de insulina", "Síntomas", "Monitoreo de glucosa", "Cuidados diarios" },
+                TopicSub = new[] { "Cómo aplicarla", "Reconócelos a tiempo", "Mide y controla", "Rutina de cuidado" },
+                TopicDesc = new[]
+                {
+                    "La insulina se aplica con una inyección o una bomba, generalmente antes de comer, para ayudar a que la glucosa entre a tus células.",
+                    "Mucha sed, ganas frecuentes de ir al baño y cansancio pueden indicar que tu glucosa está muy alta o muy baja.",
+                    "Medir tu glucosa con el glucómetro varias veces al día te ayuda a saber cómo reacciona tu cuerpo a la comida y al ejercicio.",
+                    "Revisar tus pies, guardar bien tu insulina en frío y llevar siempre algo dulce por si tu glucosa baja son hábitos que cuidan tu salud."
+                },
+                TopicIcon = new[] { icSyringe, icAlert, icDrop, icCalendar },
+                Markers = markersClinico,
+                Narration = new[] { N(8), N(9), N(10), N(11) },
+            };
+        }
+
         void Start()
         {
             if (font != null) UIKit.Font = font;
             audioSrc = gameObject.AddComponent<AudioSource>();
             audioSrc.playOnAwake = false;
-            if (pancreasModel != null) modelViewer = ModelViewer.Create(pancreasModel, UIKit.Hex("C86B6B"));
             mainCam = Camera.main;
-            if (pancreasModel != null)
+            BuildBooks();
+
+            for (int b = 0; b < 3; b++)
+                if (books[b].Model != null) modelViewers[b] = ModelViewer.Create(books[b].Model, books[b].ModelTint);
+
+            // Un único rig de AR (ARSession/cámara) para toda la app: crear uno por libro causaba que
+            // ARCore devolviera "camera was passed NULL" al tener varias sesiones nativas compitiendo
+            // (AR Foundation solo soporta un ARSession activo por proceso). Se registran los marcadores
+            // de los 3 libros de una vez; SetScope() restringe cuáles puede detectar cada pantalla.
+            var scanEntries = new List<MarkerEntry>();
+            for (int b = 0; b < 3; b++)
             {
-                arController = ARController.Create(pancreasModel, UIKit.Hex("C86B6B"), markers);
-                arController.OnState = ARStateChanged;
+                if (books[b].Markers == null) continue;
+                for (int i = 0; i < books[b].Markers.Length; i++)
+                {
+                    var m = books[b].Markers[i];
+                    if (m == null) continue;
+                    string title = i < books[b].TopicTitle.Length ? books[b].TopicTitle[i] : books[b].Title;
+                    scanEntries.Add(new MarkerEntry { Marker = m, Model = books[b].Model, Tint = books[b].ModelTint, Title = title });
+                }
             }
+            arController = ARController.CreateMulti(scanEntries.ToArray());
+            arController.OnState = ARStateChanged;
+            arController.OnMarkerTitle = t => { if (arTitle != null) arTitle.text = t; };
+
             BuildAll();
             if (Environment.GetEnvironmentVariable("ARCAP") == "1" && !captureStarted)
             {
@@ -106,29 +182,41 @@ namespace ARDiabetes
             }
         }
 
-        const int ArPanelIndex = 6; // pLibroAR en el arreglo `panels`
-
         void Update()
         {
-            // No reconstruir la UI mientras se está en la Experiencia AR: un giro/tilt de la mano
+            // No reconstruir la UI mientras se está en una Experiencia AR: un giro/tilt de la mano
             // dispara un cambio Land/Portrait que recreaba el Canvas (incluido el fondo global,
             // que vuelve a quedar visible/opaco) tapando el feed real de la cámara a mitad de sesión.
-            if (canvas != null && Land != builtLandscape && shown != ArPanelIndex) BuildAll();
+            bool onAr = panels != null && shown >= 0 && shown < panels.Length && arPanels.Contains(panels[shown]);
+            if (canvas != null && Land != builtLandscape && !onAr) BuildAll();
         }
 
         void BuildAll()
         {
             if (canvas != null) Destroy(canvas.gameObject);
             builtLandscape = Land;
+            arPanels.Clear(); detallePanels.Clear();
             BuildCanvas();
             pInicio = BuildInicio();
             pBienvenida = BuildBienvenida();
             pPerfil = BuildPerfil();
             pMenu = BuildMenu();
-            pLibroTemas = BuildLibroTemas();
-            pLibroDetalle = BuildLibroDetalle();
-            pLibroAR = BuildLibroAR();
-            panels = new[] { pInicio, pBienvenida, pPerfil, pMenu, pLibroTemas, pLibroDetalle, pLibroAR };
+            for (int b = 0; b < 3; b++)
+            {
+                int bi = b;
+                bookTemas[b] = BuildLibroTemas(bi);
+                bookDetalle[b] = BuildLibroDetalle(bi);
+                bookAR[b] = BuildLibroAR(bi);
+                detallePanels.Add(bookDetalle[b]);
+                arPanels.Add(bookAR[b]);
+            }
+            pScanAR = BuildScanAR();
+            arPanels.Add(pScanAR);
+            panels = new RectTransform[] { pInicio, pBienvenida, pPerfil, pMenu,
+                bookTemas[0], bookDetalle[0], bookAR[0],
+                bookTemas[1], bookDetalle[1], bookAR[1],
+                bookTemas[2], bookDetalle[2], bookAR[2],
+                pScanAR };
             ShowOnly(panels[Mathf.Clamp(shown, 0, panels.Length - 1)], false);
         }
 
@@ -137,8 +225,8 @@ namespace ARDiabetes
         {
             EditorClearPreview();
             if (font != null) UIKit.Font = font;
-            currentTopic = 1; // El páncreas
-            shown = Mathf.Clamp(index, 0, 6);
+            currentBook = 0; currentTopic = 1;
+            shown = Mathf.Clamp(index, 0, 13);
             BuildAll();
         }
 
@@ -188,6 +276,14 @@ namespace ARDiabetes
             var trt = toast.rectTransform;
             trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0f); trt.pivot = new Vector2(0.5f, 0f);
             trt.anchoredPosition = new Vector2(0, 210); trt.sizeDelta = new Vector2(940, 90);
+
+            // Flash blanco para el botón "Foto" (topmost, cubre toda la pantalla)
+            var flashGo = new GameObject("Flash", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            flashGo.transform.SetParent(canvas.transform, false);
+            flashOverlay = flashGo.GetComponent<Image>();
+            flashOverlay.color = new Color(1, 1, 1, 0);
+            flashOverlay.raycastTarget = false;
+            UIKit.Stretch(flashOverlay.rectTransform);
         }
 
         RectTransform Panel(string name)
@@ -196,6 +292,15 @@ namespace ARDiabetes
             UIKit.Stretch(rt);
             rt.gameObject.AddComponent<CanvasGroup>();
             return rt;
+        }
+
+        void AddBlob(Transform parent, Color c, float ax, float ay, float size)
+        {
+            var img = UIKit.Img(parent, UIKit.Circle(), "Blob");
+            img.color = new Color(c.r, c.g, c.b, 0.10f);
+            var rt = img.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(ax, ay); rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(size, size);
         }
 
         // Barra inferior de accesos rápidos (Inicio / Progreso / Config / Ayuda)
@@ -232,15 +337,6 @@ namespace ARDiabetes
             }
         }
 
-        void AddBlob(Transform parent, Color c, float ax, float ay, float size)
-        {
-            var img = UIKit.Img(parent, UIKit.Circle(), "Blob");
-            img.color = new Color(c.r, c.g, c.b, 0.10f);
-            var rt = img.rectTransform;
-            rt.anchorMin = rt.anchorMax = new Vector2(ax, ay); rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(size, size);
-        }
-
         // ============================================================
         void ShowOnly(RectTransform panel, bool animate = true)
         {
@@ -254,23 +350,52 @@ namespace ARDiabetes
                 if (starLabel != null) starLabel.text = AppState.Stars.ToString();
                 if (menuAvatar != null) menuAvatar.sprite = AvatarFor(AppState.Age);
             }
-            if (panel == pLibroDetalle) RefreshDetalle();
-            if (panel == pLibroAR && arTitle != null)
+
+            // ¿A qué libro (0-2) o pantalla pertenece este panel? -1 si no es Detalle/AR.
+            int book = Array.IndexOf(bookDetalle, panel);
+            if (book < 0) book = Array.IndexOf(bookAR, panel);
+
+            if (detallePanels.Contains(panel) && book >= 0) { currentBook = book; RefreshDetalle(); }
+
+            bool isBookAr = book >= 0 && bookAR[book] == panel;
+            bool isScanAr = panel == pScanAR;
+            isGenericScan = isScanAr;
+
+            if (isBookAr || isScanAr)
             {
-                arTitle.text = TopicTitles[currentTopic];
-                if (arInfo != null) arInfo.text = TopicDesc[currentTopic];
+                var refs = panel.GetComponent<ArRefs>();
+                if (refs != null)
+                {
+                    arRaw = refs.Raw; arBg = refs.Bg; arHintText = refs.Hint;
+                    arTitle = refs.Title; arToast = refs.Toast; arInfo = refs.Info; arInfoCard = refs.InfoCard;
+                }
                 if (arInfoCard != null) arInfoCard.gameObject.SetActive(false);
-            }
-            if (arController != null)
-            {
-                if (panel == pLibroAR) arController.Activate();
+
+                if (isBookAr)
+                {
+                    currentBook = book;
+                    modelViewer = modelViewers[book];
+                    var names = new List<string>();
+                    if (books[book].Markers != null)
+                        foreach (var m in books[book].Markers) if (m != null) names.Add(m.name);
+                    arController.SetScope(names);
+                    if (arTitle != null) arTitle.text = books[book].TopicTitle[currentTopic];
+                    if (arInfo != null) arInfo.text = books[book].TopicDesc[currentTopic];
+                }
                 else
                 {
-                    arController.Deactivate();
-                    if (mainCam != null) mainCam.enabled = true;
-                    if (arRaw != null) arRaw.enabled = modelViewer != null;
-                    if (globalBg != null) globalBg.gameObject.SetActive(true);
+                    modelViewer = null; arController.SetScope(null);
+                    if (arTitle != null) arTitle.text = "Escanear página";
+                    if (arInfo != null) arInfo.text = "Apunta la cámara a cualquier página de los libros para ver su modelo 3D.";
                 }
+                arController.Activate();
+            }
+            else if (arController != null)
+            {
+                arController.Deactivate();
+                if (mainCam != null) mainCam.enabled = true;
+                if (arRaw != null) arRaw.enabled = modelViewer != null;
+                if (globalBg != null) globalBg.gameObject.SetActive(true);
             }
             if (animate) { StartCoroutine(FadeIn(panel)); }
         }
@@ -527,8 +652,7 @@ namespace ARDiabetes
                 var rc = UIKit.Cell(i, 3, 2, x0, y0, x1, y1, gx, gy);
                 string label = labels[i];
                 int idx = i;
-                var tile = UIKit.Button(p, "", colors[i], Color.white, 34,
-                    () => { if (idx == 0) ShowOnly(pLibroTemas); else Toast("Próximamente: " + label.Replace("\n", " ")); });
+                var tile = UIKit.Button(p, "", colors[i], Color.white, 34, () => OnMenuTile(idx, label));
                 UIKit.Frac(R(tile), rc.xMin, rc.yMin, rc.xMax, rc.yMax);
                 UIKit.AddShadow(tile.GetComponent<Image>(), 34, 0.16f, -8, 8);
                 tile.gameObject.AddComponent<Appear>().delay = 0.05f * i;
@@ -543,6 +667,13 @@ namespace ARDiabetes
             return p;
         }
 
+        void OnMenuTile(int idx, string label)
+        {
+            if (idx >= 0 && idx <= 2) { currentBook = idx; currentTopic = 0; ShowOnly(bookTemas[idx]); }
+            else if (idx == 3) ShowOnly(pScanAR);
+            else Toast("Próximamente: " + label.Replace("\n", " "));
+        }
+
         void ProgressBar(Transform parent, float value, float x0, float y0, float x1, float y1)
         {
             var track = UIKit.Box(parent, UIKit.Hex("E2ECF5"), 16, "Track");
@@ -552,7 +683,7 @@ namespace ARDiabetes
         }
 
         // ============================================================
-        // 5A - LIBRO FISIOLÓGICO (Temas -> Detalle -> Experiencia AR)
+        // 5A/5B/5C - LIBROS (Temas -> Detalle -> Experiencia AR)
         // ============================================================
         static readonly Color[] TopicAccent = { UIKit.Clin, UIKit.Fisio, UIKit.Nutri, UIKit.Prog };
 
@@ -573,9 +704,9 @@ namespace ARDiabetes
             return b;
         }
 
-        void HeaderBand(RectTransform p, Sprite icon, string title, UnityEngine.Events.UnityAction onBack, bool showBack = true)
+        void HeaderBand(RectTransform p, Color accent, Sprite icon, string title, UnityEngine.Events.UnityAction onBack, bool showBack = true)
         {
-            var band = UIKit.Box(p, UIKit.Fisio, 0, "Band");
+            var band = UIKit.Box(p, accent, 0, "Band");
             UIKit.Frac(band.rectTransform, 0f, Land ? 0.86f : 0.885f, 1f, 1.01f);
             if (showBack)
             {
@@ -592,15 +723,15 @@ namespace ARDiabetes
             UIKit.Frac(t, showBack ? 0.24f : 0.16f, 0.1f, 0.94f, 0.9f);
         }
 
-        RectTransform BuildLibroTemas()
+        RectTransform BuildLibroTemas(int book)
         {
-            var p = Panel("5A_Temas");
-            HeaderBand(p, icBook, "Libro Fisiológico", () => ShowOnly(pMenu), showBack: false);
+            var b = books[book];
+            var p = Panel(book + "_Temas");
+            HeaderBand(p, b.Accent, icBook, b.Title, () => ShowOnly(pMenu), showBack: false);
             var sub = UIKit.Text(p, "Elige un tema para explorar en 3D", 40, UIKit.Muted, TextAlignmentOptions.Center, FontStyles.Normal);
             if (!Land) UIKit.Frac(sub, 0.08f, 0.815f, 0.92f, 0.86f);
             else UIKit.Frac(sub, 0.1f, 0.77f, 0.9f, 0.83f);
 
-            Sprite[] ticons = { icQuestion, icPancreas, icDrop, icGear };
             bool land = Land;
             int cols = land ? 2 : 1, rows = land ? 2 : 4;
             float y0 = land ? 0.22f : 0.13f, y1 = land ? 0.72f : 0.79f;
@@ -609,16 +740,16 @@ namespace ARDiabetes
                 var rc = UIKit.Cell(i, cols, rows, 0.05f, y0, 0.95f, y1, 0.03f, 0.03f);
                 int idx = i;
                 Color acc = TopicAccent[i];
-                var btn = UIKit.Button(p, "", UIKit.Card, UIKit.Navy, 30, () => { currentTopic = idx; ShowOnly(pLibroDetalle); });
+                var btn = UIKit.Button(p, "", UIKit.Card, UIKit.Navy, 30, () => { currentTopic = idx; ShowOnly(bookDetalle[book]); });
                 UIKit.Frac(R(btn), rc.xMin, rc.yMin, rc.xMax, rc.yMax);
                 UIKit.AddShadow(btn.GetComponent<Image>(), 30, 0.12f, -6, 6);
                 btn.gameObject.AddComponent<Appear>().delay = 0.05f * i;
 
                 // Círculo de color con el icono del tema (mismo lenguaje visual que Perfil)
                 var disc = UIKit.Img(btn.transform, UIKit.Circle(), "Disc"); disc.color = acc;
-                var tic = UIKit.Img(btn.transform, ticons[i], "Ic"); tic.color = Color.white;
-                var tl = UIKit.Text(btn.transform, TopicTitles[i], 40, UIKit.Navy, TextAlignmentOptions.Left);
-                var sb = UIKit.Text(btn.transform, TopicSub[i], 30, UIKit.Muted, TextAlignmentOptions.Left, FontStyles.Normal);
+                var tic = UIKit.Img(btn.transform, b.TopicIcon[i], "Ic"); tic.color = Color.white;
+                var tl = UIKit.Text(btn.transform, b.TopicTitle[i], 40, UIKit.Navy, TextAlignmentOptions.Left);
+                var sb = UIKit.Text(btn.transform, b.TopicSub[i], 30, UIKit.Muted, TextAlignmentOptions.Left, FontStyles.Normal);
                 var chev = UIKit.Text(btn.transform, "›", 58, acc, TextAlignmentOptions.Right);
 
                 if (!land)
@@ -642,44 +773,38 @@ namespace ARDiabetes
             return p;
         }
 
-        void PlaceSquareFrac(Image img, float cx, float cy)
+        RectTransform BuildLibroDetalle(int book)
         {
-            var rt = img.rectTransform;
-            rt.anchorMin = rt.anchorMax = new Vector2(cx, cy); rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(64, 64);
-        }
-
-        RectTransform BuildLibroDetalle()
-        {
-            var p = Panel("5A_Detalle");
-            HeaderBand(p, spPancreas, "Libro Fisiológico", () => ShowOnly(pLibroTemas));
+            var b = books[book];
+            var p = Panel(book + "_Detalle");
+            HeaderBand(p, b.Accent, b.HeroIcon, b.Title, () => ShowOnly(bookTemas[book]));
             var card = UIKit.Box(p, UIKit.Card, 44, "Card");
             if (!Land) UIKit.Frac(card.rectTransform, 0.06f, 0.19f, 0.94f, 0.83f);
             else UIKit.Frac(card.rectTransform, 0.06f, 0.13f, 0.94f, 0.81f);
             UIKit.AddShadow(card, 44, 0.10f, -8, 8);
 
-            detBand = UIKit.Box(card.transform, TopicAccent[currentTopic], 40, "Hero");
-            detImg = UIKit.Img(detBand.transform, spPancreas, "Img"); detImg.preserveAspect = true;
-            detTitle = UIKit.Text(card.transform, "", 54, UIKit.Navy);
-            detDesc = UIKit.Text(card.transform, "", 40, UIKit.Muted, TextAlignmentOptions.Center, FontStyles.Normal);
+            var band = UIKit.Box(card.transform, b.Accent, 40, "Hero");
+            var img = UIKit.Img(band.transform, b.HeroIcon, "Img"); img.preserveAspect = true;
+            var title = UIKit.Text(card.transform, "", 54, UIKit.Navy);
+            var desc = UIKit.Text(card.transform, "", 40, UIKit.Muted, TextAlignmentOptions.Center, FontStyles.Normal);
             if (!Land)
             {
-                UIKit.Frac(detBand.rectTransform, 0.06f, 0.55f, 0.94f, 0.95f);
-                UIKit.Frac(detImg, 0.28f, 0.06f, 0.72f, 0.94f);
-                UIKit.Frac(detTitle, 0.06f, 0.44f, 0.94f, 0.53f);
-                UIKit.Frac(detDesc, 0.08f, 0.10f, 0.92f, 0.42f);
+                UIKit.Frac(band.rectTransform, 0.06f, 0.55f, 0.94f, 0.95f);
+                UIKit.Frac(img, 0.28f, 0.06f, 0.72f, 0.94f);
+                UIKit.Frac(title, 0.06f, 0.44f, 0.94f, 0.53f);
+                UIKit.Frac(desc, 0.08f, 0.10f, 0.92f, 0.42f);
             }
             else
             {
-                UIKit.Frac(detBand.rectTransform, 0.04f, 0.12f, 0.42f, 0.9f);
-                UIKit.Frac(detImg, 0.08f, 0.08f, 0.92f, 0.92f);
-                UIKit.Frac(detTitle, 0.46f, 0.66f, 0.97f, 0.88f);
-                UIKit.Frac(detDesc, 0.46f, 0.2f, 0.97f, 0.62f);
+                UIKit.Frac(band.rectTransform, 0.04f, 0.12f, 0.42f, 0.9f);
+                UIKit.Frac(img, 0.08f, 0.08f, 0.92f, 0.92f);
+                UIKit.Frac(title, 0.46f, 0.66f, 0.97f, 0.88f);
+                UIKit.Frac(desc, 0.46f, 0.2f, 0.97f, 0.62f);
             }
 
             var escuchar = UIKit.Button(p, "  Escuchar", UIKit.Blue, Color.white, 36, () => PlayNarration(), 38);
             var g = UIKit.Img(R(escuchar), icAudio, "Ico"); g.color = Color.white;
-            var scan = UIKit.Button(p, "ESCANEAR PÁGINA", UIKit.Fisio, Color.white, 40, () => ShowOnly(pLibroAR));
+            var scan = UIKit.Button(p, "ESCANEAR PÁGINA", b.Accent, Color.white, 40, () => ShowOnly(bookAR[book]));
             if (!Land)
             {
                 UIKit.Frac(R(escuchar), 0.15f, 0.105f, 0.85f, 0.16f);
@@ -693,58 +818,77 @@ namespace ARDiabetes
                 UIKit.Frac(R(scan), 0.52f, 0.03f, 0.92f, 0.10f);
             }
             UIKit.AddShadow(scan.GetComponent<Image>(), 40, 0.18f, -8, 6);
-            RefreshDetalle();
+
+            // Guardar refs para este libro específico (se re-vinculan a los campos "actuales" en ShowOnly)
+            p.gameObject.AddComponent<DetalleRefs>().Set(band, img, title, desc);
             return p;
         }
 
         void RefreshDetalle()
         {
-            if (detTitle == null) return;
-            detTitle.text = TopicTitles[currentTopic];
-            detDesc.text = TopicDesc[currentTopic];
-            if (detBand != null) detBand.color = TopicAccent[currentTopic];
+            var p = bookDetalle[currentBook];
+            var refs = p.GetComponent<DetalleRefs>();
+            if (refs == null) return;
+            var b = books[currentBook];
+            refs.Title.text = b.TopicTitle[currentTopic];
+            refs.Desc.text = b.TopicDesc[currentTopic];
+            refs.Band.color = b.Accent;
+            detTitle = refs.Title; detDesc = refs.Desc; detBand = refs.Band; detImg = refs.Img;
         }
 
-        RectTransform BuildLibroAR()
+        RectTransform BuildLibroAR(int book)
         {
-            var p = Panel("5A_AR");
+            var b = books[book];
+            var p = BuildArScreenCore(book + "_AR", () => modelViewers[book], () => ShowOnly(bookDetalle[book]));
+            return p;
+        }
+
+        RectTransform BuildScanAR()
+        {
+            return BuildArScreenCore("5D_ScanAR", () => null, () => ShowOnly(pMenu));
+        }
+
+        // Núcleo común de una pantalla de Experiencia AR (usada por cada libro y por el escaneo genérico).
+        RectTransform BuildArScreenCore(string name, Func<ModelViewer> viewerGetter, UnityEngine.Events.UnityAction onClose)
+        {
+            var p = Panel(name);
             var bg = UIKit.Box(p, UIKit.Hex("14212E"), 4, "ARbg"); UIKit.Stretch(bg.rectTransform);
-            arBg = bg;
 
             var raw = new GameObject("Model3D", typeof(RectTransform)).AddComponent<RawImage>();
             raw.transform.SetParent(p, false); raw.raycastTarget = false;
-            if (modelViewer != null) { raw.texture = modelViewer.Texture; raw.color = Color.white; }
+            var mv = viewerGetter();
+            if (mv != null) { raw.texture = mv.Texture; raw.color = Color.white; }
             else raw.color = new Color(1, 1, 1, 0);
             if (!Land) UIKit.Frac(raw.rectTransform, 0.06f, 0.24f, 0.94f, 0.83f);
             else UIKit.Frac(raw.rectTransform, 0.26f, 0.14f, 0.74f, 0.92f);
-            arRaw = raw;
 
-            arTitle = UIKit.Text(p, "", 50, Color.white);
-            UIKit.Frac(arTitle, 0.10f, 0.905f, 0.90f, 0.97f);
+            var titleTxt = UIKit.Text(p, "", 50, Color.white);
+            UIKit.Frac(titleTxt, 0.10f, 0.905f, 0.90f, 0.97f);
             var pill = UIKit.Box(p, new Color(1, 1, 1, 0.12f), 30, "Hint");
             var hint = UIKit.Text(pill.transform, "Vista 3D · la cámara AR en vivo llega pronto", 30, UIKit.Hex("BFD3E6"), TextAlignmentOptions.Center, FontStyles.Normal);
             UIKit.Stretch(hint.rectTransform, 24);
-            arHintText = hint;
             UIKit.Frac(pill.rectTransform, 0.14f, 0.855f, 0.86f, 0.90f);
 
             // Controles circulares
             CircleBtn(p, icInfo, UIKit.Blue, Color.white, () => { if (arInfoCard != null) arInfoCard.gameObject.SetActive(!arInfoCard.gameObject.activeSelf); }, 1f, 0.68f, 118, -82, 0);
             CircleBtn(p, icAudio, UIKit.Nutri, Color.white, () => PlayNarration(), 1f, 0.57f, 118, -82, 0);
             CircleBtn(p, icRotate, UIKit.Prog, Color.white, () => { if (modelViewer != null) modelViewer.ToggleSpin(); }, 1f, 0.46f, 118, -82, 0);
-            CircleBtn(p, icClose, UIKit.Juegos, Color.white, () => ShowOnly(pLibroDetalle), 0.5f, 0f, 130, -190, 150);
-            CircleBtn(p, icCamera, UIKit.Clin, Color.white, () => ShowARToast("Captura: próximamente"), 0.5f, 0f, 176, 0, 160);
+            CircleBtn(p, icClose, UIKit.Juegos, Color.white, onClose, 0.5f, 0f, 130, -190, 150);
+            CircleBtn(p, icCamera, UIKit.Clin, Color.white, () => StartCoroutine(FlashAndSave()), 0.5f, 0f, 176, 0, 160);
 
-            arToast = UIKit.Text(p, "", 36, Color.white);
-            UIKit.Frac(arToast, 0.05f, 0.135f, 0.95f, 0.185f);
+            var toastTxt = UIKit.Text(p, "", 36, Color.white);
+            UIKit.Frac(toastTxt, 0.05f, 0.135f, 0.95f, 0.185f);
 
-            arInfoCard = UIKit.Node("InfoCard", p);
-            var ic = UIKit.Box(arInfoCard, UIKit.Card, 36, "Bg"); UIKit.Stretch(ic.rectTransform);
+            var infoCard = UIKit.Node("InfoCard", p);
+            var ic = UIKit.Box(infoCard, UIKit.Card, 36, "Bg"); UIKit.Stretch(ic.rectTransform);
             UIKit.AddShadow(ic, 36, 0.25f, -8, 10);
-            arInfo = UIKit.Text(arInfoCard, "", 40, UIKit.Navy, TextAlignmentOptions.Center, FontStyles.Normal);
-            UIKit.Stretch(arInfo.rectTransform, 48);
-            if (!Land) UIKit.Frac(arInfoCard, 0.10f, 0.34f, 0.90f, 0.64f);
-            else UIKit.Frac(arInfoCard, 0.28f, 0.30f, 0.72f, 0.74f);
-            arInfoCard.gameObject.SetActive(false);
+            var infoTxt = UIKit.Text(infoCard, "", 40, UIKit.Navy, TextAlignmentOptions.Center, FontStyles.Normal);
+            UIKit.Stretch(infoTxt.rectTransform, 48);
+            if (!Land) UIKit.Frac(infoCard, 0.10f, 0.34f, 0.90f, 0.64f);
+            else UIKit.Frac(infoCard, 0.28f, 0.30f, 0.72f, 0.74f);
+            infoCard.gameObject.SetActive(false);
+
+            p.gameObject.AddComponent<ArRefs>().Set(raw, bg, hint, titleTxt, toastTxt, infoTxt, infoCard);
             return p;
         }
 
@@ -764,16 +908,41 @@ namespace ARDiabetes
                 if (arBg != null) arBg.color = UIKit.Hex("14212E"); // fondo oscuro para el visor 3D
                 if (mainCam != null) mainCam.enabled = true;
                 if (globalBg != null) globalBg.gameObject.SetActive(true);
-                if (arHintText != null) arHintText.text = "Vista 3D interactiva · toca Girar para explorar";
+                if (arHintText != null) arHintText.text = modelViewer != null
+                    ? "Vista 3D interactiva · toca Girar para explorar"
+                    : "AR no disponible en este dispositivo para el escaneo libre";
             }
         }
 
         void PlayNarration()
         {
-            if (audioSrc == null || narracion == null || currentTopic >= narracion.Length || narracion[currentTopic] == null)
+            var clips = isGenericScan ? null : books[currentBook].Narration;
+            if (audioSrc == null || clips == null || currentTopic >= clips.Length || clips[currentTopic] == null)
             { ShowARToast("Sin audio disponible"); return; }
             if (audioSrc.isPlaying) { audioSrc.Stop(); ShowARToast("Audio detenido"); }
-            else { audioSrc.clip = narracion[currentTopic]; audioSrc.Play(); ShowARToast("Reproduciendo narración…"); }
+            else { audioSrc.clip = clips[currentTopic]; audioSrc.Play(); ShowARToast("Reproduciendo narración…"); }
+        }
+
+        IEnumerator FlashAndSave()
+        {
+            string dir = System.IO.Path.Combine(Application.persistentDataPath, "Fotos");
+            System.IO.Directory.CreateDirectory(dir);
+            string file = System.IO.Path.Combine(dir, "foto_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(file);
+            if (flashOverlay != null)
+            {
+                float t = 0, dur = 0.22f;
+                while (t < dur)
+                {
+                    t += Time.unscaledDeltaTime;
+                    flashOverlay.color = new Color(1, 1, 1, Mathf.Sin(Mathf.Clamp01(t / dur) * Mathf.PI) * 0.85f);
+                    yield return null;
+                }
+                flashOverlay.color = new Color(1, 1, 1, 0);
+            }
+            yield return new WaitForSeconds(0.25f);
+            ShowARToast("Foto guardada");
         }
 
         void ShowARToast(string msg)
@@ -800,19 +969,33 @@ namespace ARDiabetes
             string dir = Environment.GetEnvironmentVariable("ARCAP_DIR");
             if (string.IsNullOrEmpty(dir)) dir = Application.persistentDataPath;
             string suf = Land ? "_land" : "_port";
-            var names = new[] { "1_inicio", "2_bienvenida", "3_perfil", "4_menu", "5a_temas", "5a_detalle", "5a_ar" };
-            currentTopic = 1; // El páncreas, para el detalle/AR
+            currentBook = 0; currentTopic = 1;
             yield return new WaitForSeconds(1f);
             for (int i = 0; i < panels.Length; i++)
             {
                 ShowOnly(panels[i], false);
                 yield return new WaitForSeconds(0.8f); // dejar asentar animaciones de entrada
                 yield return new WaitForEndOfFrame();
-                ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "cap_" + names[i] + suf + ".png"));
+                ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "cap_" + panels[i].name + suf + ".png"));
                 yield return new WaitForSeconds(0.3f);
             }
             yield return new WaitForSeconds(0.4f);
             Application.Quit();
         }
+    }
+
+    // Pequeños contenedores de referencias para poder reasignar los campos "actuales" al cambiar
+    // de libro/pantalla sin duplicar toda la lógica de ARStateChanged/PlayNarration/etc.
+    class DetalleRefs : MonoBehaviour
+    {
+        public Image Band, Img; public TMP_Text Title, Desc;
+        public void Set(Image band, Image img, TMP_Text title, TMP_Text desc) { Band = band; Img = img; Title = title; Desc = desc; }
+    }
+
+    class ArRefs : MonoBehaviour
+    {
+        public RawImage Raw; public Image Bg; public TMP_Text Hint, Title, Toast, Info; public RectTransform InfoCard;
+        public void Set(RawImage raw, Image bg, TMP_Text hint, TMP_Text title, TMP_Text toast, TMP_Text info, RectTransform infoCard)
+        { Raw = raw; Bg = bg; Hint = hint; Title = title; Toast = toast; Info = info; InfoCard = infoCard; }
     }
 }
