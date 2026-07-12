@@ -1057,7 +1057,12 @@ namespace ARDiabetes
             if (icon != null)
             {
                 var g = UIKit.Img(band.transform, icon, "Ico"); g.color = Color.white;
-                UIKit.Frac(g, showBack ? 0.135f : 0.05f, 0.24f, showBack ? 0.215f : 0.13f, 0.76f);
+                var grt = R(g); grt.anchorMin = grt.anchorMax = new Vector2(0, 0.5f); grt.pivot = new Vector2(0, 0.5f);
+                // Mismo sistema de coordenadas (píxeles fijos, anclado a la izquierda) que el botón de
+                // volver: antes el ícono se posicionaba por fracción del ANCHO de la franja, así que en
+                // landscape (franja mucho más ancha) quedaba muy separado de la flecha. Con píxeles fijos
+                // el hueco entre flecha e ícono es siempre el mismo, sin importar la orientación.
+                grt.anchoredPosition = new Vector2(showBack ? 148 : 36, 0); grt.sizeDelta = new Vector2(64, 64);
             }
             // Centrado en TODA la franja (no en el hueco libre a la derecha del ícono/flecha),
             // como en cualquier barra superior — antes quedaba corrido hacia la derecha.
