@@ -17,7 +17,9 @@ namespace ARDiabetes
         const string KeyTopicsMask = "ar_topics_seen";   // bit i = libro*4 + tema (leer el texto)
         const string KeyAudioMask = "ar_audio_heard";    // bit i = libro*4 + tema (escuchar narración)
         const string KeyScanMask = "ar_marker_scanned";  // bit i = libro*4 + tema (escanear el QR real)
-        const string KeyBonusMask = "ar_bonus";          // bit 0-2 = libro completo, bit 3 = los 3 libros
+        const string KeyQuizMask = "ar_quiz_correct";    // bit i = libro*4 + pregunta (respuesta correcta, quiz)
+        const string KeyBonusMask = "ar_bonus";          // bit 0-2 = libro completo (lectura), bit 3 = los 3 libros,
+                                                          // bit 4-6 = quiz de libro completo (Juegos y Retos)
         const string KeyStreak = "ar_streak";
         const string KeyLastDay = "ar_last_day"; // días desde una fecha fija, para calcular racha
         const string KeyMuted = "ar_muted";
@@ -125,6 +127,43 @@ namespace ARDiabetes
             return msgs;
         }
 
+        /// <summary>Marca una pregunta del quiz de un libro como respondida correctamente la primera
+        /// vez (+5 estrellas). Si con esta ya se respondieron bien las 4 del libro, suma el bonus de
+        /// "quiz completo" (+20, una sola vez).</summary>
+        public static List<string> MarkQuizCorrect(int book, int question)
+        {
+            var msgs = new List<string>();
+            if (!SetBitIfNew(KeyQuizMask, book, question)) return msgs;
+            msgs.Add("+5 estrellas · respuesta correcta");
+            string lvl = AwardStars(5);
+            string bonus = CheckQuizBonus(book);
+            if (bonus != null) msgs.Add(bonus);
+            if (lvl != null) msgs.Add(lvl);
+            return msgs;
+        }
+
+        static string CheckQuizBonus(int book)
+        {
+            int mask = PlayerPrefs.GetInt(KeyQuizMask, 0);
+            for (int i = 0; i < 4; i++) if ((mask & (1 << (book * 4 + i))) == 0) return null;
+            int bonusMask = PlayerPrefs.GetInt(KeyBonusMask, 0);
+            int bit = 4 + book;
+            if ((bonusMask & (1 << bit)) != 0) return null;
+            PlayerPrefs.SetInt(KeyBonusMask, bonusMask | (1 << bit));
+            Stars += 20;
+            return "¡Quiz completo! +20 estrellas";
+        }
+
+        /// <summary>Preguntas del quiz de un libro respondidas correctamente (0-4), para mostrar
+        /// "3/4 correctas" en el hub de Juegos y Retos.</summary>
+        public static int QuizCorrectCount(int book)
+        {
+            int mask = PlayerPrefs.GetInt(KeyQuizMask, 0);
+            int n = 0;
+            for (int i = 0; i < 4; i++) if ((mask & (1 << (book * 4 + i))) != 0) n++;
+            return n;
+        }
+
         /// <summary>Temas vistos de un libro (0-2), o el total de los 3 si book &lt; 0.</summary>
         public static int TopicsSeenCount(int book = -1)
         {
@@ -163,6 +202,7 @@ namespace ARDiabetes
             PlayerPrefs.SetInt(KeyTopicsMask, 0);
             PlayerPrefs.SetInt(KeyAudioMask, 0);
             PlayerPrefs.SetInt(KeyScanMask, 0);
+            PlayerPrefs.SetInt(KeyQuizMask, 0);
             PlayerPrefs.SetInt(KeyBonusMask, 0);
             PlayerPrefs.SetInt(KeyStreak, 0);
             PlayerPrefs.DeleteKey(KeyLastDay);

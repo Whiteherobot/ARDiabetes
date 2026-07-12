@@ -29,5 +29,16 @@ namespace ARDiabetes
                     : DescPre; // Kids_10_12 y None (sin perfil) caen al nivel intermedio
             return arr[topic];
         }
+
+        // Quiz del libro (Juegos y Retos): 4 preguntas, una por tema.
+        public QuizQuestion[] Quiz;
+    }
+
+    /// <summary>Una pregunta de opción múltiple (3 opciones) del quiz de un libro.</summary>
+    public class QuizQuestion
+    {
+        public string Q;
+        public string[] Options;
+        public int Correct;
     }
 }

@@ -38,7 +38,7 @@ namespace ARDiabetes
         RectTransform root;
         RectTransform globalBg;
         Image flashOverlay;
-        RectTransform pInicio, pBienvenida, pPerfil, pMenu, pScanAR, pProgreso, pConfig, pAyuda;
+        RectTransform pInicio, pBienvenida, pPerfil, pMenu, pScanAR, pProgreso, pConfig, pAyuda, pJuegos;
         RectTransform photoViewer;
         RawImage photoViewerImg;
         RectTransform rewardBox;
@@ -47,12 +47,15 @@ namespace ARDiabetes
         RectTransform[] bookTemas = new RectTransform[3];
         RectTransform[] bookDetalle = new RectTransform[3];
         RectTransform[] bookAR = new RectTransform[3];
+        RectTransform[] bookQuiz = new RectTransform[3];
         RectTransform[] panels;
         HashSet<RectTransform> arPanels = new HashSet<RectTransform>();
         HashSet<RectTransform> detallePanels = new HashSet<RectTransform>();
         int shown;
         bool builtLandscape;
         bool captureStarted;
+        int quizBook, quizQ, quizScore;
+        bool quizAnswered;
 
         TMP_Text starLabel, toast, holaText, nivelText;
         Image menuAvatar, nivelFill;
@@ -126,6 +129,17 @@ namespace ARDiabetes
                 TopicIcon = new[] { icQuestion, icPancreas, icDrop, icGear },
                 Markers = markersFisio,
                 Narration = new[] { N(0), N(1), N(2), N(3) },
+                Quiz = new[]
+                {
+                    new QuizQuestion { Q = "¿Qué le pasa al cuerpo en la diabetes tipo 1?",
+                        Options = new[] { "Produce demasiada agua", "Produce casi nada de insulina", "Crece más rápido de lo normal" }, Correct = 1 },
+                    new QuizQuestion { Q = "¿Qué órgano fabrica la insulina?",
+                        Options = new[] { "El estómago", "El páncreas", "Los pulmones" }, Correct = 1 },
+                    new QuizQuestion { Q = "¿Para qué sirve la insulina?",
+                        Options = new[] { "Para dejar entrar la glucosa a las células", "Para respirar mejor", "Para digerir grasas" }, Correct = 0 },
+                    new QuizQuestion { Q = "¿Qué pasa si al cuerpo le falta insulina?",
+                        Options = new[] { "Los huesos crecen más", "El cuerpo se pone más alto", "La glucosa no entra bien a las células" }, Correct = 2 },
+                },
             };
             books[1] = new BookDef
             {
@@ -157,6 +171,17 @@ namespace ARDiabetes
                 TopicIcon = new[] { icPlate, icBread, icApple, icClock },
                 Markers = markersNutri,
                 Narration = new[] { N(4), N(5), N(6), N(7) },
+                Quiz = new[]
+                {
+                    new QuizQuestion { Q = "¿Cómo se arma un plato saludable?",
+                        Options = new[] { "Solo con postres", "Mitad verduras, un cuarto proteína, un cuarto carbohidratos", "Solo con carbohidratos" }, Correct = 1 },
+                    new QuizQuestion { Q = "¿Qué alimentos suben la glucosa más rápido?",
+                        Options = new[] { "Los carbohidratos (pan, arroz, frutas)", "El agua", "Las especias" }, Correct = 0 },
+                    new QuizQuestion { Q = "¿Qué ayuda a mantener la glucosa estable por más tiempo?",
+                        Options = new[] { "Solo dulces", "Bebidas azucaradas", "Verduras y proteínas magras" }, Correct = 2 },
+                    new QuizQuestion { Q = "¿Qué hábito ayuda a controlar mejor la diabetes?",
+                        Options = new[] { "Saltarte comidas", "Comer a horarios regulares y tomar agua", "Comer solo de noche" }, Correct = 1 },
+                },
             };
             books[2] = new BookDef
             {
@@ -188,6 +213,17 @@ namespace ARDiabetes
                 TopicIcon = new[] { icSyringe, icAlert, icDrop, icCalendar },
                 Markers = markersClinico,
                 Narration = new[] { N(8), N(9), N(10), N(11) },
+                Quiz = new[]
+                {
+                    new QuizQuestion { Q = "¿Cuándo se aplica generalmente la insulina?",
+                        Options = new[] { "Antes de comer", "Una vez al mes", "Solo al dormir" }, Correct = 0 },
+                    new QuizQuestion { Q = "¿Qué síntomas pueden indicar que la glucosa está muy alta o baja?",
+                        Options = new[] { "Dolor de oídos", "Picazón en los ojos", "Mucha sed y cansancio" }, Correct = 2 },
+                    new QuizQuestion { Q = "¿Para qué sirve medir la glucosa con el glucómetro?",
+                        Options = new[] { "Para tomar fotos", "Para saber cómo reacciona tu cuerpo a la comida", "Para medir la temperatura" }, Correct = 1 },
+                    new QuizQuestion { Q = "¿Qué cuidado diario es importante?",
+                        Options = new[] { "Revisar tus pies y llevar algo dulce por si acaso", "No tomar agua nunca", "Evitar hacer ejercicio siempre" }, Correct = 0 },
+                },
             };
         }
 
@@ -287,11 +323,14 @@ namespace ARDiabetes
             pProgreso = BuildProgreso();
             pConfig = BuildConfig();
             pAyuda = BuildAyuda();
+            pJuegos = BuildJuegos();
+            for (int b = 0; b < 3; b++) bookQuiz[b] = BuildQuiz(b);
             panels = new RectTransform[] { pInicio, pBienvenida, pPerfil, pMenu,
                 bookTemas[0], bookDetalle[0], bookAR[0],
                 bookTemas[1], bookDetalle[1], bookAR[1],
                 bookTemas[2], bookDetalle[2], bookAR[2],
-                pScanAR, pProgreso, pConfig, pAyuda };
+                pScanAR, pProgreso, pConfig, pAyuda,
+                pJuegos, bookQuiz[0], bookQuiz[1], bookQuiz[2] };
             ShowOnly(panels[Mathf.Clamp(shown, 0, panels.Length - 1)], false);
         }
 
@@ -301,7 +340,7 @@ namespace ARDiabetes
             EditorClearPreview();
             if (font != null) UIKit.Font = font;
             currentBook = 0; currentTopic = 1;
-            shown = Mathf.Clamp(index, 0, 16);
+            shown = Mathf.Clamp(index, 0, 20);
             BuildAll();
         }
 
@@ -498,6 +537,10 @@ namespace ARDiabetes
             }
             else if (panel == pProgreso) RefreshProgreso();
             else if (panel == pConfig) RefreshConfig();
+            else if (panel == pJuegos) RefreshJuegos();
+
+            int quizB = Array.IndexOf(bookQuiz, panel);
+            if (quizB >= 0) { quizBook = quizB; RefreshQuiz(); }
 
             // ¿A qué libro (0-2) o pantalla pertenece este panel? -1 si no es Detalle/AR.
             int book = Array.IndexOf(bookDetalle, panel);
@@ -831,8 +874,8 @@ namespace ARDiabetes
         {
             if (idx >= 0 && idx <= 2) { currentBook = idx; currentTopic = 0; ShowOnly(bookTemas[idx]); }
             else if (idx == 3) ShowOnly(pScanAR);
+            else if (idx == 4) ShowOnly(pJuegos);
             else if (idx == 5) ShowOnly(pProgreso);
-            else Toast("Próximamente: " + label.Replace("\n", " "));
         }
 
         Image ProgressBar(Transform parent, float value, float x0, float y0, float x1, float y1, Color? color = null)
@@ -1239,6 +1282,200 @@ namespace ARDiabetes
             return BuildArScreenCore("5D_ScanAR", () => null, () => ShowOnly(pMenu));
         }
 
+        // ============================================================
+        // 6 - JUEGOS Y RETOS: un quiz de 4 preguntas por libro (no solo "próximamente")
+        // ============================================================
+        RectTransform BuildJuegos()
+        {
+            var p = Panel("6_Juegos");
+            bool land = Land;
+            HeaderBand(p, UIKit.Juegos, spIconJuegos, "Juegos y Retos", () => ShowOnly(pMenu), showBack: false);
+            var sub = UIKit.Text(p, "Responde el quiz de cada libro y gana estrellas", 38, UIKit.Muted, TextAlignmentOptions.Center, FontStyles.Normal);
+            if (!land) UIKit.Frac(sub, 0.08f, 0.815f, 0.92f, 0.865f);
+            else UIKit.Frac(sub, 0.08f, 0.77f, 0.92f, 0.83f);
+
+            var count = new TMP_Text[3];
+            int cols = land ? 3 : 1, rows = land ? 1 : 3;
+            float y0 = land ? 0.20f : 0.13f, y1 = land ? 0.72f : 0.79f;
+            for (int i = 0; i < 3; i++)
+            {
+                var b = books[i];
+                var rc = UIKit.Cell(i, cols, rows, 0.05f, y0, 0.95f, y1, 0.03f, 0.03f);
+                int idx = i;
+                var btn = UIKit.Button(p, "", UIKit.Card, UIKit.Navy, 30, () => { quizBook = idx; ShowOnly(bookQuiz[idx]); });
+                UIKit.Frac(R(btn), rc.xMin, rc.yMin, rc.xMax, rc.yMax);
+                UIKit.AddShadow(btn.GetComponent<Image>(), 30, 0.12f, -6, 6);
+                btn.gameObject.AddComponent<Appear>().delay = 0.05f * i;
+
+                var disc = UIKit.Img(btn.transform, UIKit.Circle(), "Disc"); disc.color = b.Accent;
+                var tic = UIKit.Img(btn.transform, b.HeroIcon, "Ic"); tic.color = Color.white;
+                var tl = UIKit.Text(btn.transform, "Quiz " + b.Title.Replace("Libro ", ""), 38, UIKit.Navy, TextAlignmentOptions.Left);
+                var cnt = UIKit.Text(btn.transform, "", 28, UIKit.Muted, TextAlignmentOptions.Left, FontStyles.Normal);
+                var chev = UIKit.Text(btn.transform, "›", 58, b.Accent, TextAlignmentOptions.Right);
+                count[i] = cnt;
+
+                if (!land)
+                {
+                    UIKit.Frac(disc, 0.04f, 0.18f, 0.26f, 0.82f);
+                    UIKit.Frac(tic, 0.095f, 0.33f, 0.205f, 0.67f);
+                    UIKit.Frac(tl, 0.31f, 0.46f, 0.87f, 0.82f);
+                    UIKit.Frac(cnt, 0.31f, 0.16f, 0.87f, 0.44f);
+                    UIKit.Frac(chev, 0.88f, 0.30f, 0.97f, 0.70f);
+                }
+                else
+                {
+                    UIKit.Frac(disc, 0.10f, 0.48f, 0.32f, 0.92f);
+                    UIKit.Frac(tic, 0.155f, 0.575f, 0.265f, 0.795f);
+                    UIKit.Frac(tl, 0.08f, 0.28f, 0.94f, 0.44f);
+                    UIKit.Frac(cnt, 0.08f, 0.13f, 0.94f, 0.26f);
+                    UIKit.Frac(chev, 0.85f, 0.60f, 0.95f, 0.78f);
+                }
+            }
+            p.gameObject.AddComponent<JuegosRefs>().Set(count);
+            BuildBottomNav(p, -1);
+            return p;
+        }
+
+        void RefreshJuegos()
+        {
+            var refs = pJuegos.GetComponent<JuegosRefs>();
+            if (refs == null) return;
+            for (int i = 0; i < 3; i++)
+                if (refs.Count[i] != null) refs.Count[i].text = AppState.QuizCorrectCount(i) + "/4 correctas";
+        }
+
+        RectTransform BuildQuiz(int book)
+        {
+            var b = books[book];
+            var p = Panel(book + "_Quiz");
+            bool land = Land;
+            HeaderBand(p, b.Accent, b.HeroIcon, "Quiz: " + b.Title, () => ShowOnly(pJuegos));
+
+            var progress = UIKit.Text(p, "", 32, UIKit.Muted, TextAlignmentOptions.Center, FontStyles.Normal);
+            var card = UIKit.Box(p, UIKit.Card, 36, "QCard");
+            var question = UIKit.Text(card.transform, "", 42, UIKit.Navy, TextAlignmentOptions.Center);
+            UIKit.Frac(question, 0.08f, 0.1f, 0.92f, 0.9f);
+
+            var optBtn = new Button[3];
+            var optImg = new Image[3];
+            var optLbl = new TMP_Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                var btn = UIKit.Button(p, "", UIKit.Card, UIKit.Navy, 30, null);
+                var lbl = UIKit.Text(btn.transform, "", 34, UIKit.Navy, TextAlignmentOptions.Left);
+                UIKit.Frac(lbl, 0.08f, 0.1f, 0.92f, 0.9f);
+                optBtn[i] = btn; optImg[i] = btn.GetComponent<Image>(); optLbl[i] = lbl;
+            }
+
+            // AddShadow lee el rect ACTUAL del elemento para calcular la sombra: hay que llamarlo
+            // después de fijar la posición final (Frac), si no la sombra queda con el tamaño/posición
+            // por defecto (100x100 centrado) en vez de calzar con la tarjeta/botón real.
+            if (!land)
+            {
+                UIKit.Frac(progress, 0.08f, 0.835f, 0.92f, 0.87f);
+                UIKit.Frac(card.rectTransform, 0.06f, 0.62f, 0.94f, 0.815f);
+                float oy = 0.47f, oh = 0.115f, gap = 0.03f;
+                for (int i = 0; i < 3; i++)
+                    UIKit.Frac(R(optBtn[i]), 0.08f, oy - i * (oh + gap) - oh, 0.92f, oy - i * (oh + gap));
+            }
+            else
+            {
+                UIKit.Frac(progress, 0.06f, 0.77f, 0.94f, 0.82f);
+                UIKit.Frac(card.rectTransform, 0.06f, 0.53f, 0.94f, 0.75f);
+                float oy = 0.42f, oh = 0.10f, gap = 0.025f;
+                for (int i = 0; i < 3; i++)
+                    UIKit.Frac(R(optBtn[i]), 0.14f, oy - i * (oh + gap) - oh, 0.86f, oy - i * (oh + gap));
+            }
+            UIKit.AddShadow(card, 36, 0.10f, -6, 6);
+            for (int i = 0; i < 3; i++) UIKit.AddShadow(optImg[i], 26, 0.10f, -5, 5);
+
+            // Overlay de resultado final (oculto hasta terminar las 4 preguntas)
+            var resultPanel = UIKit.Node("Result", p);
+            UIKit.Stretch(resultPanel);
+            var resBg = UIKit.Box(resultPanel, new Color(0.04f, 0.07f, 0.11f, 0.88f), 0, "Bg");
+            UIKit.Stretch(resBg.rectTransform);
+            var resultText = UIKit.Text(resultPanel, "", 52, Color.white);
+            var retryBtn = UIKit.Button(resultPanel, "Reintentar", b.Accent, Color.white, 36, () => ShowOnly(p, false));
+            var backBtn = UIKit.Button(resultPanel, "Volver a Juegos", UIKit.Blue, Color.white, 36, () => ShowOnly(pJuegos));
+            if (!land)
+            {
+                UIKit.Frac(resultText, 0.1f, 0.5f, 0.9f, 0.74f);
+                UIKit.Frac(R(retryBtn), 0.15f, 0.32f, 0.85f, 0.39f);
+                UIKit.Frac(R(backBtn), 0.15f, 0.22f, 0.85f, 0.29f);
+            }
+            else
+            {
+                UIKit.Frac(resultText, 0.1f, 0.48f, 0.9f, 0.76f);
+                UIKit.Frac(R(retryBtn), 0.30f, 0.30f, 0.70f, 0.40f);
+                UIKit.Frac(R(backBtn), 0.30f, 0.16f, 0.70f, 0.26f);
+            }
+            resultPanel.gameObject.SetActive(false);
+
+            var refs = p.gameObject.AddComponent<QuizRefs>();
+            refs.Set(progress, question, resultText, optBtn, optImg, optLbl, resultPanel);
+            for (int i = 0; i < 3; i++)
+            {
+                int idx = i;
+                optBtn[i].onClick.AddListener(() => AnswerQuiz(refs, idx));
+            }
+            return p;
+        }
+
+        void RefreshQuiz()
+        {
+            quizQ = 0; quizScore = 0;
+            var refs = bookQuiz[quizBook].GetComponent<QuizRefs>();
+            if (refs == null) return;
+            refs.ResultPanel.gameObject.SetActive(false);
+            ShowQuizQuestion(refs);
+        }
+
+        void ShowQuizQuestion(QuizRefs refs)
+        {
+            var qz = books[quizBook].Quiz[quizQ];
+            quizAnswered = false;
+            refs.Progress.text = "Pregunta " + (quizQ + 1) + "/4";
+            refs.Question.text = qz.Q;
+            for (int i = 0; i < 3; i++)
+            {
+                refs.OptLabels[i].text = qz.Options[i];
+                refs.OptImages[i].color = UIKit.Card;
+                refs.OptButtons[i].interactable = true;
+            }
+        }
+
+        void AnswerQuiz(QuizRefs refs, int optIdx)
+        {
+            if (quizAnswered) return;
+            quizAnswered = true;
+            var qz = books[quizBook].Quiz[quizQ];
+            bool correct = optIdx == qz.Correct;
+            refs.OptImages[optIdx].color = correct ? UIKit.Hex("BBF0C6") : UIKit.Hex("F8C7CE");
+            if (!correct) refs.OptImages[qz.Correct].color = UIKit.Hex("BBF0C6");
+            for (int i = 0; i < 3; i++) refs.OptButtons[i].interactable = false;
+            if (correct)
+            {
+                quizScore++;
+                var msgs = AppState.MarkQuizCorrect(quizBook, quizQ);
+                if (msgs.Count > 0) ShowReward(string.Join("\n", msgs));
+            }
+            StartCoroutine(NextQuizStep(refs));
+        }
+
+        IEnumerator NextQuizStep(QuizRefs refs)
+        {
+            yield return new WaitForSeconds(0.9f);
+            quizQ++;
+            if (quizQ >= 4) ShowQuizResult(refs);
+            else ShowQuizQuestion(refs);
+        }
+
+        void ShowQuizResult(QuizRefs refs)
+        {
+            refs.ResultPanel.gameObject.SetActive(true);
+            refs.ResultText.text = "¡Terminaste!\n" + quizScore + "/4 correctas";
+        }
+
         // Núcleo común de una pantalla de Experiencia AR (usada por cada libro y por el escaneo genérico).
         RectTransform BuildArScreenCore(string name, Func<ModelViewer> viewerGetter, UnityEngine.Events.UnityAction onClose)
         {
@@ -1430,5 +1667,24 @@ namespace ARDiabetes
     {
         public TMP_Text AgeSub, MuteSub;
         public void Set(TMP_Text ageSub, TMP_Text muteSub) { AgeSub = ageSub; MuteSub = muteSub; }
+    }
+
+    class JuegosRefs : MonoBehaviour
+    {
+        public TMP_Text[] Count;
+        public void Set(TMP_Text[] count) { Count = count; }
+    }
+
+    class QuizRefs : MonoBehaviour
+    {
+        public TMP_Text Progress, Question, ResultText;
+        public Button[] OptButtons; public Image[] OptImages; public TMP_Text[] OptLabels;
+        public RectTransform ResultPanel;
+        public void Set(TMP_Text progress, TMP_Text question, TMP_Text resultText,
+            Button[] optButtons, Image[] optImages, TMP_Text[] optLabels, RectTransform resultPanel)
+        {
+            Progress = progress; Question = question; ResultText = resultText;
+            OptButtons = optButtons; OptImages = optImages; OptLabels = optLabels; ResultPanel = resultPanel;
+        }
     }
 }
