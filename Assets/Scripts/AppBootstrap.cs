@@ -102,12 +102,26 @@ namespace ARDiabetes
                 Model = pancreasModel, ModelTint = UIKit.Hex("C86B6B"),
                 TopicTitle = new[] { "¿Qué es la diabetes tipo 1?", "El páncreas", "Insulina y glucosa", "Cómo funciona" },
                 TopicSub = new[] { "Conoce la enfermedad", "El órgano de la insulina", "Cómo obtienes energía", "Todo trabaja en equipo" },
-                TopicDesc = new[]
+                DescKids = new[]
+                {
+                    "Tu cuerpo tiene un ayudante llamado insulina. En la diabetes tipo 1, ese ayudante casi no aparece. ¡Vamos a conocerlo juntos!",
+                    "El páncreas es un amigo escondido en tu barriga. Fabrica la insulina. ¡Míralo en 3D!",
+                    "La insulina es como una llave mágica. Abre la puerta de tus células para que entre la energía (glucosa).",
+                    "El páncreas, la insulina y la glucosa trabajan en equipo, como superhéroes, para darte energía todos los días."
+                },
+                DescPre = new[]
                 {
                     "La diabetes tipo 1 aparece cuando el cuerpo casi no produce insulina, la hormona que nos da energía. ¡Aprende a conocerla y cuidarte!",
                     "El páncreas es el órgano que fabrica la insulina en tu cuerpo. Explóralo en 3D y descubre cómo es por dentro.",
                     "La insulina es como una llave que deja entrar la glucosa (energía) a tus células para que funcionen.",
                     "Descubre cómo trabajan juntos el páncreas, la insulina y la glucosa para darte energía cada día."
+                },
+                DescTeens = new[]
+                {
+                    "La diabetes tipo 1 es una enfermedad autoinmune: el sistema de defensas del cuerpo ataca por error las células del páncreas que producen insulina, la hormona clave para usar la glucosa como energía.",
+                    "El páncreas es una glándula mixta: sus células beta, en los islotes de Langerhans, producen insulina, la hormona que regula tu glucosa en sangre.",
+                    "La insulina actúa como una llave molecular: se une a receptores en la membrana celular y permite el transporte de glucosa al interior para producir energía.",
+                    "El eje páncreas-insulina-glucosa regula tu metabolismo energético: sin suficiente insulina, la glucosa se acumula en la sangre en vez de entrar en las células."
                 },
                 TopicIcon = new[] { icQuestion, icPancreas, icDrop, icGear },
                 Markers = markersFisio,
@@ -119,12 +133,26 @@ namespace ARDiabetes
                 Model = platoModel, ModelTint = UIKit.Hex("7CB86F"),
                 TopicTitle = new[] { "Plato saludable", "Carbohidratos", "Alimentos recomendados", "Hábitos saludables" },
                 TopicSub = new[] { "Equilibra tu comida", "La energía más rápida", "Elige mejor", "Cuídate cada día" },
-                TopicDesc = new[]
+                DescKids = new[]
+                {
+                    "Un plato feliz tiene la mitad de verduras, un poco de proteína y un poco de carbohidratos. ¡Así tu cuerpo está contento!",
+                    "Los carbohidratos son la comida que sube tu energía más rápido, como el pan, el arroz y las frutas.",
+                    "Las verduras y las proteínas te ayudan a mantenerte fuerte y con energía estable todo el día.",
+                    "Comer a la misma hora, tomar agua y no comer tantos dulces hace que cuidarte sea más fácil."
+                },
+                DescPre = new[]
                 {
                     "El plato saludable te ayuda a equilibrar tu comida: mitad de vegetales, un cuarto de proteína y un cuarto de carbohidratos. Así tu glucosa sube de forma más estable.",
                     "Los carbohidratos son la energía que más rápido sube tu glucosa. Aprende a reconocerlos en el pan, el arroz, la pasta y las frutas.",
                     "Las verduras, las proteínas magras y las grasas saludables te ayudan a mantener tu glucosa estable durante más tiempo.",
                     "Comer a las mismas horas, tomar agua y evitar azúcares en exceso hacen que tu diabetes sea mucho más fácil de controlar cada día."
+                },
+                DescTeens = new[]
+                {
+                    "El método del plato ayuda a controlar la carga glucémica de tus comidas: 50% vegetales, 25% proteína y 25% carbohidratos, favoreciendo una curva de glucosa más estable.",
+                    "Los carbohidratos tienen el mayor impacto en la glucemia postprandial. Conocer su índice glucémico te ayuda a anticipar y ajustar tu dosis de insulina.",
+                    "Priorizar fibra, proteínas magras y grasas saludables enlentece la absorción de glucosa, reduciendo picos glucémicos bruscos.",
+                    "Mantener horarios regulares de comida, buena hidratación y control de azúcares simples mejora la variabilidad glucémica a largo plazo."
                 },
                 TopicIcon = new[] { icPlate, icBread, icApple, icClock },
                 Markers = markersNutri,
@@ -136,12 +164,26 @@ namespace ARDiabetes
                 Model = glucoModel, ModelTint = UIKit.Hex("4E8FD1"),
                 TopicTitle = new[] { "Uso de insulina", "Síntomas", "Monitoreo de glucosa", "Cuidados diarios" },
                 TopicSub = new[] { "Cómo aplicarla", "Reconócelos a tiempo", "Mide y controla", "Rutina de cuidado" },
-                TopicDesc = new[]
+                DescKids = new[]
+                {
+                    "La insulina se aplica con una inyectorcita o una bombita, antes de comer, para ayudarte a usar la energía de la comida.",
+                    "Tener mucha sed, ir mucho al baño y sentirte cansado puede avisarte que algo anda diferente.",
+                    "Medir tu glucosa con el glucómetro te ayuda a saber cómo está tu cuerpo, como revisar la energía de un videojuego.",
+                    "Revisar tus piecitos, guardar bien tu insulina en frío y llevar algo dulce por si acaso son tus superpoderes de cuidado."
+                },
+                DescPre = new[]
                 {
                     "La insulina se aplica con una inyección o una bomba, generalmente antes de comer, para ayudar a que la glucosa entre a tus células.",
                     "Mucha sed, ganas frecuentes de ir al baño y cansancio pueden indicar que tu glucosa está muy alta o muy baja.",
                     "Medir tu glucosa con el glucómetro varias veces al día te ayuda a saber cómo reacciona tu cuerpo a la comida y al ejercicio.",
                     "Revisar tus pies, guardar bien tu insulina en frío y llevar siempre algo dulce por si tu glucosa baja son hábitos que cuidan tu salud."
+                },
+                DescTeens = new[]
+                {
+                    "La insulina se administra por vía subcutánea (pluma, jeringa o bomba), habitualmente antes de las comidas, ajustando la dosis según los carbohidratos y la glucosa previa.",
+                    "Poliuria, polidipsia y fatiga son signos clásicos de hiperglucemia; temblor, sudoración y confusión pueden indicar hipoglucemia — ambos requieren atención inmediata.",
+                    "El automonitoreo (glucómetro o sensor continuo) permite identificar patrones glucémicos y ajustar decisiones de insulina, alimentación y actividad física.",
+                    "La inspección diaria de los pies, la conservación adecuada de la insulina en frío y llevar una fuente rápida de glucosa son hábitos clave para prevenir complicaciones."
                 },
                 TopicIcon = new[] { icSyringe, icAlert, icDrop, icCalendar },
                 Markers = markersClinico,
@@ -489,7 +531,7 @@ namespace ARDiabetes
                         foreach (var m in books[book].Markers) if (m != null) names.Add(m.name);
                     arController.SetScope(names);
                     if (arTitle != null) arTitle.text = books[book].TopicTitle[currentTopic];
-                    if (arInfo != null) arInfo.text = books[book].TopicDesc[currentTopic];
+                    if (arInfo != null) arInfo.text = books[book].Desc(currentTopic, AppState.Age);
                 }
                 else
                 {
@@ -1178,7 +1220,7 @@ namespace ARDiabetes
             if (refs == null) return;
             var b = books[currentBook];
             refs.Title.text = b.TopicTitle[currentTopic];
-            refs.Desc.text = b.TopicDesc[currentTopic];
+            refs.Desc.text = b.Desc(currentTopic, AppState.Age);
             refs.Band.color = b.Accent;
             detTitle = refs.Title; detDesc = refs.Desc; detBand = refs.Band; detImg = refs.Img;
             var msgs = AppState.MarkTopicSeen(currentBook, currentTopic);
