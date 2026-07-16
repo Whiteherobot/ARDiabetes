@@ -127,9 +127,11 @@ namespace ARDiabetes
             return msgs;
         }
 
-        /// <summary>Marca una pregunta del quiz de un libro como respondida correctamente la primera
-        /// vez (+5 estrellas). Si con esta ya se respondieron bien las 4 del libro, suma el bonus de
-        /// "quiz completo" (+20, una sola vez).</summary>
+        /// <summary>Marca un juego del quiz de un libro como respondido correctamente la primera
+        /// vez (+5 estrellas). Si con este ya se respondieron bien los 3 del libro, suma el bonus de
+        /// "quiz completo" (+20, una sola vez). Cada libro tiene 3 juegos (no 4); se reutiliza el
+        /// multiplicador *4 de SetBitIfNew (compartido con temas/audio/escaneo), solo se usan 3 de
+        /// los 4 bits que le corresponden a cada libro.</summary>
         public static List<string> MarkQuizCorrect(int book, int question)
         {
             var msgs = new List<string>();
@@ -145,7 +147,7 @@ namespace ARDiabetes
         static string CheckQuizBonus(int book)
         {
             int mask = PlayerPrefs.GetInt(KeyQuizMask, 0);
-            for (int i = 0; i < 4; i++) if ((mask & (1 << (book * 4 + i))) == 0) return null;
+            for (int i = 0; i < 3; i++) if ((mask & (1 << (book * 4 + i))) == 0) return null;
             int bonusMask = PlayerPrefs.GetInt(KeyBonusMask, 0);
             int bit = 4 + book;
             if ((bonusMask & (1 << bit)) != 0) return null;
@@ -154,13 +156,13 @@ namespace ARDiabetes
             return "¡Quiz completo! +20 estrellas";
         }
 
-        /// <summary>Preguntas del quiz de un libro respondidas correctamente (0-4), para mostrar
-        /// "3/4 correctas" en el hub de Juegos y Retos.</summary>
+        /// <summary>Juegos del quiz de un libro respondidos correctamente (0-3), para mostrar
+        /// "2/3 correctas" en el hub de Juegos y Retos.</summary>
         public static int QuizCorrectCount(int book)
         {
             int mask = PlayerPrefs.GetInt(KeyQuizMask, 0);
             int n = 0;
-            for (int i = 0; i < 4; i++) if ((mask & (1 << (book * 4 + i))) != 0) n++;
+            for (int i = 0; i < 3; i++) if ((mask & (1 << (book * 4 + i))) != 0) n++;
             return n;
         }
 

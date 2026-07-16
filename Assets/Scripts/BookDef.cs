@@ -30,15 +30,32 @@ namespace ARDiabetes
             return arr[topic];
         }
 
-        // Quiz del libro (Juegos y Retos): 4 preguntas, una por tema.
-        public QuizQuestion[] Quiz;
+        // Juegos y Retos del libro: 3 juegos de tipos distintos (no todos son opción múltiple).
+        public GameItem[] Quiz;
     }
 
-    /// <summary>Una pregunta de opción múltiple (3 opciones) del quiz de un libro.</summary>
-    public class QuizQuestion
+    public enum GameType { Choice, Matching, MultiSelect }
+
+    /// <summary>
+    /// Un juego/pregunta de "Juegos y Retos". Choice cubre opción múltiple, verdadero/falso
+    /// y completar-la-frase por igual (Options + Correct); Matching y MultiSelect usan sus
+    /// propios campos.
+    /// </summary>
+    public class GameItem
     {
+        public GameType Type = GameType.Choice;
         public string Q;
+
+        // Choice (MC / Verdadero-Falso / Completar frase): hasta 4 opciones.
         public string[] Options;
         public int Correct;
+
+        // Matching: Left[i] se relaciona correctamente con Right[i]. Right se muestra
+        // desordenado en pantalla; el emparejamiento correcto se valida por índice original.
+        public string[] Left;
+        public string[] Right;
+
+        // MultiSelect: Options[] + máscara de cuáles deben quedar seleccionadas.
+        public bool[] CorrectMask;
     }
 }
