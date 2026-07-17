@@ -100,10 +100,14 @@ ARDiabetes/
 │   ├── XR/                 # config de ARCore / XR generada por ProjectSetup.SetupAR
 │   └── TextMesh Pro/       # paquete de fuentes TMP
 ├── Marcadores/              # QR IMPRIMIBLES (4 tarjetas + hoja A4) para probar el escaneo AR
+├── Documentacion/           # Guía técnica en PDF: cómo cambiar modelos 3D y marcadores QR
 ├── Packages/manifest.json  # dependencias (AR Foundation 6.5, ARCore 6.5, TMP, Input System…)
 ├── ProjectSettings/
 └── README.md               # este archivo
 ```
+
+> Para cambiar los modelos 3D o los marcadores QR (o entender qué modelo va con qué página),
+> ver `Documentacion/Guia-Tecnica-Modelos-y-QR-ARDiabetes.pdf`.
 
 ### Scripts (`Assets/Scripts/`)
 

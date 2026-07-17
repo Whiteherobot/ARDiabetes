@@ -19,7 +19,9 @@ namespace ARDiabetes
         const string KeyScanMask = "ar_marker_scanned";  // bit i = libro*4 + tema (escanear el QR real)
         const string KeyQuizMask = "ar_quiz_correct";    // bit i = libro*4 + pregunta (respuesta correcta, quiz)
         const string KeyBonusMask = "ar_bonus";          // bit 0-2 = libro completo (lectura), bit 3 = los 3 libros,
-                                                          // bit 4-6 = quiz de libro completo (Juegos y Retos)
+                                                          // bit 4-6 = quiz de libro completo (Juegos y Retos),
+                                                          // bit 7 = explorador AR (12/12 marcadores), bit 8 = racha de 7 días.
+                                                          // Cada bit es también, 1 a 1, el índice de una insignia en Badges[].
         const string KeyStreak = "ar_streak";
         const string KeyLastDay = "ar_last_day"; // días desde una fecha fija, para calcular racha
         const string KeyMuted = "ar_muted";
@@ -123,8 +125,21 @@ namespace ARDiabetes
             if (!SetBitIfNew(KeyScanMask, book, topic)) return msgs;
             msgs.Add("+5 estrellas · página escaneada en AR");
             string lvl = AwardStars(5);
+            string bonus = CheckScanAllBonus();
+            if (bonus != null) msgs.Add(bonus);
             if (lvl != null) msgs.Add(lvl);
             return msgs;
+        }
+
+        /// <summary>Bonus único (+25) al escanear en AR real los 12 marcadores (insignia "Explorador AR").</summary>
+        static string CheckScanAllBonus()
+        {
+            if (PlayerPrefs.GetInt(KeyScanMask, 0) != (1 << TopicsTotal) - 1) return null;
+            int bonus = PlayerPrefs.GetInt(KeyBonusMask, 0);
+            if ((bonus & (1 << 7)) != 0) return null;
+            PlayerPrefs.SetInt(KeyBonusMask, bonus | (1 << 7));
+            Stars += 25;
+            return "¡Explorador AR! Escaneaste las 12 páginas · +25 estrellas";
         }
 
         /// <summary>Marca un juego del quiz de un libro como respondido correctamente la primera
@@ -166,6 +181,15 @@ namespace ARDiabetes
             return n;
         }
 
+        /// <summary>Marcadores reales escaneados en AR (0-12), para el contador de la Colección AR.</summary>
+        public static int MarkersScannedCount()
+        {
+            int mask = PlayerPrefs.GetInt(KeyScanMask, 0);
+            int n = 0;
+            for (int i = 0; i < TopicsTotal; i++) if ((mask & (1 << i)) != 0) n++;
+            return n;
+        }
+
         /// <summary>Temas vistos de un libro (0-2), o el total de los 3 si book &lt; 0.</summary>
         public static int TopicsSeenCount(int book = -1)
         {
@@ -185,17 +209,61 @@ namespace ARDiabetes
 
         public static int Streak => PlayerPrefs.GetInt(KeyStreak, 0);
 
-        /// <summary>Actualiza la racha de días consecutivos. Llamar una vez al iniciar la app.</summary>
-        public static void TouchDailyStreak()
+        /// <summary>Actualiza la racha de días consecutivos. Llamar una vez al iniciar la app.
+        /// Devuelve el aviso de bonus si con esto se alcanzó la racha de 7 días (o lista vacía).</summary>
+        public static List<string> TouchDailyStreak()
         {
+            var msgs = new List<string>();
             int today = (int)(DateTime.UtcNow.Date - Epoch).TotalDays;
             int last = PlayerPrefs.GetInt(KeyLastDay, -1);
-            if (last == today) return; // ya contado hoy
+            if (last == today) return msgs; // ya contado hoy
             int streak = last == today - 1 ? PlayerPrefs.GetInt(KeyStreak, 0) + 1 : 1;
             PlayerPrefs.SetInt(KeyStreak, streak);
             PlayerPrefs.SetInt(KeyLastDay, today);
             PlayerPrefs.Save();
+            string bonus = CheckStreakBonus();
+            if (bonus != null) msgs.Add(bonus);
+            return msgs;
         }
+
+        /// <summary>Bonus único (+20) al alcanzar una racha de 7 días seguidos (insignia "Racha de fuego").</summary>
+        static string CheckStreakBonus()
+        {
+            if (Streak < 7) return null;
+            int bonus = PlayerPrefs.GetInt(KeyBonusMask, 0);
+            if ((bonus & (1 << 8)) != 0) return null;
+            PlayerPrefs.SetInt(KeyBonusMask, bonus | (1 << 8));
+            Stars += 20;
+            return "¡Racha de 7 días! +20 estrellas";
+        }
+
+        /// <summary>Una insignia coleccionable: título, descripción de cómo se gana y color de marca
+        /// (reusa los colores de libro/sección ya definidos en UIKit, no duplica hex nuevos).</summary>
+        public struct BadgeDef { public string Title; public string Desc; public Color Color; }
+
+        // Índice = bit en KeyBonusMask (ver comentario arriba). Coleccionable desde la pantalla Insignias.
+        public static readonly BadgeDef[] Badges = new[]
+        {
+            new BadgeDef{ Title = "Corazón sabio",     Desc = "Completa el Libro Fisiológico",                   Color = UIKit.Fisio  },
+            new BadgeDef{ Title = "Plato saludable",    Desc = "Completa el Libro Nutricional",                   Color = UIKit.Nutri  },
+            new BadgeDef{ Title = "Doctor junior",      Desc = "Completa el Libro Clínico",                       Color = UIKit.Clin   },
+            new BadgeDef{ Title = "Diabetes Experto",   Desc = "Completa los 3 libros",                           Color = UIKit.Prog   },
+            new BadgeDef{ Title = "Genio Fisiológico",  Desc = "Responde bien los 3 juegos del Libro Fisiológico", Color = UIKit.Fisio  },
+            new BadgeDef{ Title = "Genio Nutricional",  Desc = "Responde bien los 3 juegos del Libro Nutricional", Color = UIKit.Nutri  },
+            new BadgeDef{ Title = "Genio Clínico",      Desc = "Responde bien los 3 juegos del Libro Clínico",     Color = UIKit.Clin   },
+            new BadgeDef{ Title = "Explorador AR",      Desc = "Escanea las 12 páginas en realidad aumentada",     Color = UIKit.Scan   },
+            new BadgeDef{ Title = "Racha de fuego",     Desc = "Usa la app 7 días seguidos",                       Color = UIKit.Juegos },
+        };
+
+        /// <summary>Cuántas insignias ya se ganaron, para el resumen "X/9" de la pantalla Insignias.</summary>
+        public static int BadgesUnlockedCount()
+        {
+            int n = 0;
+            for (int i = 0; i < Badges.Length; i++) if (IsBadgeUnlocked(i)) n++;
+            return n;
+        }
+
+        public static bool IsBadgeUnlocked(int i) => (PlayerPrefs.GetInt(KeyBonusMask, 0) & (1 << i)) != 0;
 
         /// <summary>Reinicia estrellas, temas vistos/escuchados/escaneados, bonus y racha (no toca la edad).</summary>
         public static void ResetProgress()

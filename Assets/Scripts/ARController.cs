@@ -40,6 +40,8 @@ namespace ARDiabetes
         string spawnedMarkerName;
         bool imagesAdded;
         float userYaw;
+        public bool autoSpin = true; // gira solo tipo "turntable", igual que el visor de respaldo (Spinner.cs)
+        public float autoSpinSpeed = 25f; // grados/seg
         HashSet<string> scope; // null = sin filtro (ve cualquier marcador); usado para restringir el escaneo al libro actual
 
         /// <summary>Restringe qué marcadores puede detectar (null = todos, usado en el escaneo genérico 5D).
@@ -142,6 +144,11 @@ namespace ARDiabetes
             // no un bug de la app, y tras cerrarlo el timeout de abajo cae al visor 3D igual.
             gameObject.SetActive(true);
             if (arCam != null) arCam.enabled = true;
+            // El auto-giro es un solo ARController compartido por toda la app (no se recrea al
+            // cambiar de pantalla) — si se apagó con el botón "girar" en una vista anterior, sin
+            // esto quedaba apagado también en la siguiente, silenciosamente. Cada Experiencia AR
+            // nueva arranca girando por defecto, como un maniquí en vitrina.
+            autoSpin = true;
             StartCoroutine(Run());
         }
 
@@ -247,12 +254,26 @@ namespace ARDiabetes
             spawned.transform.SetParent(img.transform, false);
             spawned.transform.localPosition = Vector3.zero;
             // De pie sobre la página (perpendicular al marcador), no acostado: antes -90° en X
-            // tumbaba el modelo sobre el marcador. userYaw permite girarlo con el dedo (AddYaw).
-            spawned.transform.localRotation = Quaternion.Euler(0f, userYaw, 0f);
+            // tumbaba el modelo sobre el marcador. La rotación en sí (userYaw) la aplica Update()
+            // en cada frame, no acá (ver comentario ahí abajo).
             spawned.SetActive(img.trackingState == TrackingState.Tracking || img.trackingState == TrackingState.Limited);
         }
 
         /// <summary>Rota el modelo anclado (arrastre táctil), sin perder su anclaje sobre el marcador.</summary>
         public void AddYaw(float degrees) { userYaw += degrees; }
+
+        // Auto-giro continuo (además del arrastre manual, que se suma sobre el mismo userYaw).
+        // BUG real encontrado en dispositivo (2026-07-17): con un marcador físico QUIETO, ARCore
+        // no siempre reporta el tracked image en trackablesChanged.updated cada frame (la pose no
+        // cambia lo suficiente) — Place() casi no se llamaba, así que el modelo nunca giraba visualmente
+        // aunque userYaw sí se incrementaba puertas adentro. Ahora la rotación se aplica ACÁ, todos los
+        // frames, sin depender de que ARFoundation dispare el evento de tracking.
+        void Update()
+        {
+            if (autoSpin) userYaw += autoSpinSpeed * Time.deltaTime;
+            if (spawned != null) spawned.transform.localRotation = Quaternion.Euler(0f, userYaw, 0f);
+        }
+
+        public void ToggleSpin() { autoSpin = !autoSpin; }
     }
 }
