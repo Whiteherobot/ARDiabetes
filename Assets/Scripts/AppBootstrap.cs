@@ -82,9 +82,12 @@ namespace ARDiabetes
         Camera mainCam;
         int currentBook, currentTopic;
         bool isGenericScan;
-        TMP_Text detTitle, detDesc, arTitle, arInfo, arToast;
+        TMP_Text detTitle, detDesc, arTitle, arToast;
         Image detImg, detBand;
-        RectTransform arInfoCard;
+        // Texto de info del tema actual: ya no es una tarjeta 2D (ver ARController.BuildInfoPanel,
+        // que la ancla en el espacio 3D junto al modelo). Se guarda solo como respaldo para el
+        // toast del botón "i" cuando todavía no se escaneó ningún marcador real.
+        string currentArInfoText;
 
         bool Land => Screen.width > Screen.height;
         static RectTransform R(Component c) => (RectTransform)c.transform;
@@ -275,6 +278,11 @@ namespace ARDiabetes
                 var msgs = AppState.MarkMarkerScanned(b, t);
                 if (msgs.Count > 0) ShowReward(string.Join("\n", msgs));
             };
+            // El texto de info ahora vive anclado en el espacio 3D junto al modelo (no como
+            // tarjeta 2D encima de la pantalla) — ARController lo arma solo, pidiendo acá el
+            // texto real (depende de la edad elegida, por eso se resuelve en el momento, no se
+            // precalcula una vez).
+            arController.GetInfoText = (b, t) => books[b].Desc(t, AppState.Age);
 
             StartCoroutine(InitialBuild());
         }
@@ -576,9 +584,8 @@ namespace ARDiabetes
                 if (refs != null)
                 {
                     arRaw = refs.Raw; arBg = refs.Bg; arHintText = refs.Hint;
-                    arTitle = refs.Title; arToast = refs.Toast; arInfo = refs.Info; arInfoCard = refs.InfoCard;
+                    arTitle = refs.Title; arToast = refs.Toast;
                 }
-                if (arInfoCard != null) arInfoCard.gameObject.SetActive(false);
                 // Mientras ARCore arranca la sesión (puede tardar), mostrar feedback en vez del
                 // texto de compilación ("Vista 3D...") que quedaba pegado y se sentía como traba.
                 if (arHintText != null) arHintText.text = "Iniciando cámara…";
@@ -592,13 +599,13 @@ namespace ARDiabetes
                         foreach (var m in books[book].Markers) if (m != null) names.Add(m.name);
                     arController.SetScope(names);
                     if (arTitle != null) arTitle.text = books[book].TopicTitle[currentTopic];
-                    if (arInfo != null) arInfo.text = books[book].Desc(currentTopic, AppState.Age);
+                    currentArInfoText = books[book].Desc(currentTopic, AppState.Age);
                 }
                 else
                 {
                     modelViewer = null; arController.SetScope(null);
                     if (arTitle != null) arTitle.text = "Escanear página";
-                    if (arInfo != null) arInfo.text = "Apunta la cámara a cualquier página de los libros para ver su modelo 3D.";
+                    currentArInfoText = "Apunta la cámara a cualquier página de los libros para ver su modelo 3D.";
                 }
                 arController.Activate();
             }
@@ -1897,7 +1904,15 @@ namespace ARDiabetes
             UIKit.Frac(pill.rectTransform, 0.14f, 0.855f, 0.86f, 0.90f);
 
             // Controles circulares
-            CircleBtn(p, icInfo, UIKit.Blue, Color.white, () => { if (arInfoCard != null) arInfoCard.gameObject.SetActive(!arInfoCard.gameObject.activeSelf); }, 1f, 0.68f, 118, -82, 0);
+            // El texto de info ahora vive anclado en 3D junto al modelo (ARController.ToggleInfo),
+            // no como tarjeta 2D encima de la pantalla. Si todavía no se escaneó ningún marcador
+            // real (nada anclado en el mundo para mostrar), el botón cae a un toast con el mismo
+            // texto en vez de no hacer nada.
+            CircleBtn(p, icInfo, UIKit.Blue, Color.white, () =>
+            {
+                if (arController != null && arController.HasSpawnedModel) arController.ToggleInfo();
+                else Toast(currentArInfoText);
+            }, 1f, 0.68f, 118, -82, 0);
             CircleBtn(p, icAudio, UIKit.Nutri, Color.white, () => PlayNarration(), 1f, 0.57f, 118, -82, 0);
             CircleBtn(p, icRotate, UIKit.Prog, Color.white, () => { if (modelViewer != null) modelViewer.ToggleSpin(); if (arController != null) arController.ToggleSpin(); }, 1f, 0.46f, 118, -82, 0);
             CircleBtn(p, icClose, UIKit.Juegos, Color.white, onClose, 0.5f, 0f, 130, -190, 150);
@@ -1906,19 +1921,7 @@ namespace ARDiabetes
             var toastTxt = UIKit.Text(p, "", 36, Color.white);
             UIKit.Frac(toastTxt, 0.05f, 0.135f, 0.95f, 0.185f);
 
-            var infoCard = UIKit.Node("InfoCard", p);
-            var ic = UIKit.Box(infoCard, UIKit.Card, 36, "Bg"); UIKit.Stretch(ic.rectTransform);
-            UIKit.AddShadow(ic, 36, 0.25f, -8, 10);
-            var infoTxt = UIKit.Text(infoCard, "", 40, UIKit.Navy, TextAlignmentOptions.Center, FontStyles.Normal);
-            UIKit.Stretch(infoTxt.rectTransform, 48);
-            // Antes quedaba centrada encima del modelo (mismo rango vertical) y lo tapaba del todo.
-            // Portrait: franja angosta debajo del modelo (que ahora termina en 0.42), sin pisar el toast.
-            // Landscape: columna en el margen izquierdo, que antes quedaba vacío junto al modelo.
-            if (!Land) UIKit.Frac(infoCard, 0.06f, 0.195f, 0.94f, 0.395f);
-            else UIKit.Frac(infoCard, 0.03f, 0.20f, 0.235f, 0.86f);
-            infoCard.gameObject.SetActive(false);
-
-            p.gameObject.AddComponent<ArRefs>().Set(raw, bg, hint, titleTxt, toastTxt, infoTxt, infoCard);
+            p.gameObject.AddComponent<ArRefs>().Set(raw, bg, hint, titleTxt, toastTxt);
             return p;
         }
 
@@ -2044,9 +2047,9 @@ namespace ARDiabetes
 
     class ArRefs : MonoBehaviour
     {
-        public RawImage Raw; public Image Bg; public TMP_Text Hint, Title, Toast, Info; public RectTransform InfoCard;
-        public void Set(RawImage raw, Image bg, TMP_Text hint, TMP_Text title, TMP_Text toast, TMP_Text info, RectTransform infoCard)
-        { Raw = raw; Bg = bg; Hint = hint; Title = title; Toast = toast; Info = info; InfoCard = infoCard; }
+        public RawImage Raw; public Image Bg; public TMP_Text Hint, Title, Toast;
+        public void Set(RawImage raw, Image bg, TMP_Text hint, TMP_Text title, TMP_Text toast)
+        { Raw = raw; Bg = bg; Hint = hint; Title = title; Toast = toast; }
     }
 
     // Arrastre horizontal sobre la pantalla de AR para rotar la figura (real o de respaldo).
