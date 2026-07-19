@@ -214,7 +214,7 @@ namespace ARDiabetes
         public static List<string> TouchDailyStreak()
         {
             var msgs = new List<string>();
-            int today = (int)(DateTime.UtcNow.Date - Epoch).TotalDays;
+            int today = (int)(DateTime.Now.Date - Epoch).TotalDays;
             int last = PlayerPrefs.GetInt(KeyLastDay, -1);
             if (last == today) return msgs; // ya contado hoy
             int streak = last == today - 1 ? PlayerPrefs.GetInt(KeyStreak, 0) + 1 : 1;
