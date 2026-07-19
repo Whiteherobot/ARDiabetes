@@ -26,7 +26,7 @@ namespace ARDiabetes
         public TMP_FontAsset font;
 
         [Header("Iconos UI")]
-        public Sprite icInfo, icAudio, icRotate, icClose, icCamera, icChart, icQuestion, icDrop, icGear, icHome, icBook, icPancreas;
+        public Sprite icInfo, icAudio, icRotate, icClose, icCamera, icChart, icQuestion, icDrop, icGear, icHome, icBook, icPancreas, icProfile;
         public Sprite icPlate, icBread, icApple, icClock, icSyringe, icAlert, icCalendar;
         [Header("Audio narración (12: 4 por libro)")]
         public AudioClip[] narracion;
@@ -1208,7 +1208,7 @@ namespace ARDiabetes
 
             float y0 = land ? 0.30f : 0.44f, y1 = land ? 0.78f : 0.85f;
             var ageSub = ConfigRow(p, 0, 3, y0, y1, "Cambiar perfil de edad", AppState.AgeLabel(AppState.Age),
-                icHome, UIKit.Blue, () => ShowOnly(pPerfil));
+                icProfile, UIKit.Blue, () => ShowOnly(pPerfil));
             var muteSub = ConfigRow(p, 1, 3, y0, y1, "Sonido y narración",
                 AppState.Muted ? "Silenciado · toca para activar" : "Activado · toca para silenciar",
                 icAudio, UIKit.Nutri, () => { AppState.Muted = !AppState.Muted; RefreshConfig(); });

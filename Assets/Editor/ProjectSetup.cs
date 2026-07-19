@@ -71,6 +71,7 @@ public static class ProjectSetup
         boot.icDrop     = L("Assets/Imagenes/UI/ic_drop.png");
         boot.icGear     = L("Assets/Imagenes/UI/ic_gear.png");
         boot.icHome     = L("Assets/Imagenes/UI/ic_home.png");
+        boot.icProfile  = L("Assets/Imagenes/UI/ic_profile.png");
         boot.icBook     = L("Assets/Imagenes/UI/ic_book.png");
         boot.icPancreas = L("Assets/Imagenes/UI/ic_pancreas.png");
         boot.icPlate    = L("Assets/Imagenes/UI/ic_plate.png");
