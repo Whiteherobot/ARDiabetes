@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &785976974
+--- !u!1 &1649724870
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,118 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 785976977}
-  - component: {fileID: 785976976}
-  - component: {fileID: 785976975}
+  - component: {fileID: 1649724872}
+  - component: {fileID: 1649724871}
+  m_Layer: 0
+  m_Name: AppBootstrap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1649724871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1649724870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 843a283685ac42af1be17b2169dba642, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ARDiabetes.AppBootstrap
+  spLogo: {fileID: 21300000, guid: 350d3be30629a4c47a0165cb8af29049, type: 3}
+  spWelcome: {fileID: 21300000, guid: f285d897d62eaf54a86ad92f58e2b82d, type: 3}
+  spAvatar1: {fileID: 21300000, guid: dda8391dcbeb8974492368d98d2b722d, type: 3}
+  spAvatar2: {fileID: 21300000, guid: f285d897d62eaf54a86ad92f58e2b82d, type: 3}
+  spAvatar3: {fileID: 21300000, guid: 50b2bd4b1e423444b9591eb216838e95, type: 3}
+  spIconFisio: {fileID: 21300000, guid: 4a48efe8a2e53f14bbbc893543f7d987, type: 3}
+  spIconNutri: {fileID: 21300000, guid: cc4288b81ac2f1048985875557a8c36c, type: 3}
+  spIconClinico: {fileID: 21300000, guid: e14cc67aa53e2124d874ff3b494fe0df, type: 3}
+  spIconScan: {fileID: 21300000, guid: 52a62e9d4500a6545b4345a7e51c2a50, type: 3}
+  spIconJuegos: {fileID: 21300000, guid: 45dda56f149f06649b3a19311a26f783, type: 3}
+  spIconProgreso: {fileID: 21300000, guid: a6933db36970af3e0ba3f71569130192, type: 3}
+  spStar: {fileID: 21300000, guid: f25eb8828095c38478dde46109faab79, type: 3}
+  spPancreas: {fileID: 21300000, guid: 96e7be0fc06e84d4bad511ca30bbcfa6, type: 3}
+  pancreasModel: {fileID: 919132149155446097, guid: 374781f353f791242bed0282b6ebda54, type: 3}
+  platoModel: {fileID: 919132149155446097, guid: 64d3bbb64770d834da4e6e612a60d837, type: 3}
+  glucoModel: {fileID: 919132149155446097, guid: 2ec632d37c273494a86f14fade591de8, type: 3}
+  font: {fileID: 0}
+  icInfo: {fileID: 21300000, guid: e6d6a13209f2ebc589876912eda6128f, type: 3}
+  icAudio: {fileID: 21300000, guid: 405361ebe04c57d17b8edc39313f469f, type: 3}
+  icRotate: {fileID: 21300000, guid: 7504aeccd2f57521bad7b4978284a56c, type: 3}
+  icClose: {fileID: 21300000, guid: 7b54aab83e52f58b2a629501e793d68b, type: 3}
+  icCamera: {fileID: 21300000, guid: e2745d6fe48b3354f8e6149bf9ee3676, type: 3}
+  icChart: {fileID: 21300000, guid: a6933db36970af3e0ba3f71569130192, type: 3}
+  icQuestion: {fileID: 21300000, guid: 9a910a802857fc5ab9f8b073e346f84c, type: 3}
+  icDrop: {fileID: 21300000, guid: 934533161c51200259d41b9f41d36c82, type: 3}
+  icGear: {fileID: 21300000, guid: 9a63fa3d00d9333e699bd909c881aa98, type: 3}
+  icHome: {fileID: 21300000, guid: 187bf33c983ef8a999c8e8db8ef432a9, type: 3}
+  icBook: {fileID: 21300000, guid: 36bfd3ecac5f7466b928033ae5ea8f2e, type: 3}
+  icPancreas: {fileID: 21300000, guid: ba209e5b7f137e8518933963c6035069, type: 3}
+  icProfile: {fileID: 21300000, guid: d80adecc63ba4716b0e7e462abe3a414, type: 3}
+  icPlate: {fileID: 21300000, guid: 82d8b9fb7c1ff0eb594c72a0f72a8a91, type: 3}
+  icBread: {fileID: 21300000, guid: 5ab85eba276e84db9962d7e12c2cd4d3, type: 3}
+  icApple: {fileID: 21300000, guid: 29190eb386380a21389585160a4f6b49, type: 3}
+  icClock: {fileID: 21300000, guid: 429dee8c2eee2e61da6d92af5d352010, type: 3}
+  icSyringe: {fileID: 21300000, guid: fae993a76e9d97bb0b5aa4f8c355da3d, type: 3}
+  icAlert: {fileID: 21300000, guid: 342b1922afcae0c5ca33612c2fa2c449, type: 3}
+  icCalendar: {fileID: 21300000, guid: d6ed27ab724c3f04e8d6b47b772f344e, type: 3}
+  narracion:
+  - {fileID: 8300000, guid: db879b3f13c4c2be99f3ca1e6ea7aa9d, type: 3}
+  - {fileID: 8300000, guid: efd8ee1e6381a286d94bcf8ee2e9b026, type: 3}
+  - {fileID: 8300000, guid: cee6f17f1933ccfc9ae2992ca322d5cf, type: 3}
+  - {fileID: 8300000, guid: 35b5930fe7ea7ce59af2025550b99704, type: 3}
+  - {fileID: 8300000, guid: bae16640227b65226b0f48c0ac194162, type: 3}
+  - {fileID: 8300000, guid: 5e043b2163a0bc589bd57eeae631ffc2, type: 3}
+  - {fileID: 8300000, guid: c7ac3c4a86ef48974be6a1dead47aa93, type: 3}
+  - {fileID: 8300000, guid: 9b9c0838f1019add09caef3e11818998, type: 3}
+  - {fileID: 8300000, guid: a95c0dc07f50c6996a4a4ef8b9d75f6c, type: 3}
+  - {fileID: 8300000, guid: acc838c401b7935b58a305f111584227, type: 3}
+  - {fileID: 8300000, guid: 965d85a94e735f0559b0c2e38275778d, type: 3}
+  - {fileID: 8300000, guid: 2d228d48abf6b6d71a7b14326fa6de14, type: 3}
+  markersFisio:
+  - {fileID: 2800000, guid: 51055bcfa9dbbaa5899ebdaf04c43863, type: 3}
+  - {fileID: 2800000, guid: 59b28132226573e3f9646310597798c6, type: 3}
+  - {fileID: 2800000, guid: 45f006a0f93bea86299b0fabf4b98092, type: 3}
+  - {fileID: 2800000, guid: d7780e06691a0a7639312124d96bfde6, type: 3}
+  markersNutri:
+  - {fileID: 2800000, guid: 657acb34e8f199944a0e66e33cae9504, type: 3}
+  - {fileID: 2800000, guid: 81359e3f5a0a7891bae7b9cdfa0e8b72, type: 3}
+  - {fileID: 2800000, guid: 9837976e7a56d9760b8c5fe6f983571e, type: 3}
+  - {fileID: 2800000, guid: 3d6007e903f16dab7a649bdb7a474ed5, type: 3}
+  markersClinico:
+  - {fileID: 2800000, guid: 9b8473da432672c16bd0ebd8393c8884, type: 3}
+  - {fileID: 2800000, guid: 4e0a6dd39a12983aab4de733a0d00bb7, type: 3}
+  - {fileID: 2800000, guid: bb83def50b7ccf874a6a25506c968cb0, type: 3}
+  - {fileID: 2800000, guid: 00567d565b6341012a47baacebcd6137, type: 3}
+--- !u!4 &1649724872
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1649724870}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1713384299
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1713384302}
+  - component: {fileID: 1713384301}
+  - component: {fileID: 1713384300}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -137,13 +246,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &785976975
+--- !u!114 &1713384300
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 785976974}
+  m_GameObject: {fileID: 1713384299}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
@@ -157,13 +266,13 @@ MonoBehaviour:
   m_InputActionsPerSecond: 10
   m_RepeatDelay: 0.5
   m_ForceModuleActive: 0
---- !u!114 &785976976
+--- !u!114 &1713384301
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 785976974}
+  m_GameObject: {fileID: 1713384299}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
@@ -172,13 +281,13 @@ MonoBehaviour:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
---- !u!4 &785976977
+--- !u!4 &1713384302
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 785976974}
+  m_GameObject: {fileID: 1713384299}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -187,7 +296,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1661658571
+--- !u!1 &1961710103
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -195,9 +304,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1661658574}
-  - component: {fileID: 1661658573}
-  - component: {fileID: 1661658572}
+  - component: {fileID: 1961710106}
+  - component: {fileID: 1961710105}
+  - component: {fileID: 1961710104}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -205,21 +314,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1661658572
+--- !u!81 &1961710104
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1661658571}
+  m_GameObject: {fileID: 1961710103}
   m_Enabled: 1
---- !u!20 &1661658573
+--- !u!20 &1961710105
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1661658571}
+  m_GameObject: {fileID: 1961710103}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -264,121 +373,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &1661658574
+--- !u!4 &1961710106
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1661658571}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2136412944
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2136412946}
-  - component: {fileID: 2136412945}
-  m_Layer: 0
-  m_Name: AppBootstrap
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2136412945
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2136412944}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 843a283685ac42af1be17b2169dba642, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ARDiabetes.AppBootstrap
-  spLogo: {fileID: 21300000, guid: 350d3be30629a4c47a0165cb8af29049, type: 3}
-  spWelcome: {fileID: 21300000, guid: f285d897d62eaf54a86ad92f58e2b82d, type: 3}
-  spAvatar1: {fileID: 21300000, guid: dda8391dcbeb8974492368d98d2b722d, type: 3}
-  spAvatar2: {fileID: 21300000, guid: f285d897d62eaf54a86ad92f58e2b82d, type: 3}
-  spAvatar3: {fileID: 21300000, guid: 50b2bd4b1e423444b9591eb216838e95, type: 3}
-  spIconFisio: {fileID: 21300000, guid: 4a48efe8a2e53f14bbbc893543f7d987, type: 3}
-  spIconNutri: {fileID: 21300000, guid: cc4288b81ac2f1048985875557a8c36c, type: 3}
-  spIconClinico: {fileID: 21300000, guid: e14cc67aa53e2124d874ff3b494fe0df, type: 3}
-  spIconScan: {fileID: 21300000, guid: 52a62e9d4500a6545b4345a7e51c2a50, type: 3}
-  spIconJuegos: {fileID: 21300000, guid: 45dda56f149f06649b3a19311a26f783, type: 3}
-  spIconProgreso: {fileID: 21300000, guid: a6933db36970af3e0ba3f71569130192, type: 3}
-  spStar: {fileID: 21300000, guid: f25eb8828095c38478dde46109faab79, type: 3}
-  spPancreas: {fileID: 21300000, guid: 96e7be0fc06e84d4bad511ca30bbcfa6, type: 3}
-  pancreasModel: {fileID: 919132149155446097, guid: 374781f353f791242bed0282b6ebda54, type: 3}
-  platoModel: {fileID: 919132149155446097, guid: 64d3bbb64770d834da4e6e612a60d837, type: 3}
-  glucoModel: {fileID: 919132149155446097, guid: 2ec632d37c273494a86f14fade591de8, type: 3}
-  font: {fileID: 0}
-  icInfo: {fileID: 21300000, guid: e6d6a13209f2ebc589876912eda6128f, type: 3}
-  icAudio: {fileID: 21300000, guid: 405361ebe04c57d17b8edc39313f469f, type: 3}
-  icRotate: {fileID: 21300000, guid: 7504aeccd2f57521bad7b4978284a56c, type: 3}
-  icClose: {fileID: 21300000, guid: 7b54aab83e52f58b2a629501e793d68b, type: 3}
-  icCamera: {fileID: 21300000, guid: e2745d6fe48b3354f8e6149bf9ee3676, type: 3}
-  icChart: {fileID: 21300000, guid: a6933db36970af3e0ba3f71569130192, type: 3}
-  icQuestion: {fileID: 21300000, guid: 9a910a802857fc5ab9f8b073e346f84c, type: 3}
-  icDrop: {fileID: 21300000, guid: 934533161c51200259d41b9f41d36c82, type: 3}
-  icGear: {fileID: 21300000, guid: 9a63fa3d00d9333e699bd909c881aa98, type: 3}
-  icHome: {fileID: 21300000, guid: 187bf33c983ef8a999c8e8db8ef432a9, type: 3}
-  icBook: {fileID: 21300000, guid: 36bfd3ecac5f7466b928033ae5ea8f2e, type: 3}
-  icPancreas: {fileID: 21300000, guid: ba209e5b7f137e8518933963c6035069, type: 3}
-  icPlate: {fileID: 21300000, guid: 82d8b9fb7c1ff0eb594c72a0f72a8a91, type: 3}
-  icBread: {fileID: 21300000, guid: 5ab85eba276e84db9962d7e12c2cd4d3, type: 3}
-  icApple: {fileID: 21300000, guid: 29190eb386380a21389585160a4f6b49, type: 3}
-  icClock: {fileID: 21300000, guid: 429dee8c2eee2e61da6d92af5d352010, type: 3}
-  icSyringe: {fileID: 21300000, guid: fae993a76e9d97bb0b5aa4f8c355da3d, type: 3}
-  icAlert: {fileID: 21300000, guid: 342b1922afcae0c5ca33612c2fa2c449, type: 3}
-  icCalendar: {fileID: 21300000, guid: d6ed27ab724c3f04e8d6b47b772f344e, type: 3}
-  narracion:
-  - {fileID: 8300000, guid: db879b3f13c4c2be99f3ca1e6ea7aa9d, type: 3}
-  - {fileID: 8300000, guid: efd8ee1e6381a286d94bcf8ee2e9b026, type: 3}
-  - {fileID: 8300000, guid: cee6f17f1933ccfc9ae2992ca322d5cf, type: 3}
-  - {fileID: 8300000, guid: 35b5930fe7ea7ce59af2025550b99704, type: 3}
-  - {fileID: 8300000, guid: bae16640227b65226b0f48c0ac194162, type: 3}
-  - {fileID: 8300000, guid: 5e043b2163a0bc589bd57eeae631ffc2, type: 3}
-  - {fileID: 8300000, guid: c7ac3c4a86ef48974be6a1dead47aa93, type: 3}
-  - {fileID: 8300000, guid: 9b9c0838f1019add09caef3e11818998, type: 3}
-  - {fileID: 8300000, guid: a95c0dc07f50c6996a4a4ef8b9d75f6c, type: 3}
-  - {fileID: 8300000, guid: acc838c401b7935b58a305f111584227, type: 3}
-  - {fileID: 8300000, guid: 965d85a94e735f0559b0c2e38275778d, type: 3}
-  - {fileID: 8300000, guid: 2d228d48abf6b6d71a7b14326fa6de14, type: 3}
-  markersFisio:
-  - {fileID: 2800000, guid: 51055bcfa9dbbaa5899ebdaf04c43863, type: 3}
-  - {fileID: 2800000, guid: 59b28132226573e3f9646310597798c6, type: 3}
-  - {fileID: 2800000, guid: 45f006a0f93bea86299b0fabf4b98092, type: 3}
-  - {fileID: 2800000, guid: d7780e06691a0a7639312124d96bfde6, type: 3}
-  markersNutri:
-  - {fileID: 2800000, guid: 657acb34e8f199944a0e66e33cae9504, type: 3}
-  - {fileID: 2800000, guid: 81359e3f5a0a7891bae7b9cdfa0e8b72, type: 3}
-  - {fileID: 2800000, guid: 9837976e7a56d9760b8c5fe6f983571e, type: 3}
-  - {fileID: 2800000, guid: 3d6007e903f16dab7a649bdb7a474ed5, type: 3}
-  markersClinico:
-  - {fileID: 2800000, guid: 9b8473da432672c16bd0ebd8393c8884, type: 3}
-  - {fileID: 2800000, guid: 4e0a6dd39a12983aab4de733a0d00bb7, type: 3}
-  - {fileID: 2800000, guid: bb83def50b7ccf874a6a25506c968cb0, type: 3}
-  - {fileID: 2800000, guid: 00567d565b6341012a47baacebcd6137, type: 3}
---- !u!4 &2136412946
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2136412944}
+  m_GameObject: {fileID: 1961710103}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -391,6 +392,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1661658574}
-  - {fileID: 785976977}
-  - {fileID: 2136412946}
+  - {fileID: 1961710106}
+  - {fileID: 1713384302}
+  - {fileID: 1649724872}
