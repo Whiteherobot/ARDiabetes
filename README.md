@@ -37,7 +37,7 @@ git clone <url-del-repo> ARDiabetes
 5. Dar **Play** y cambiar a la pestaña **Game** para ver la app funcionando.
 
 > **Nota clave:** casi toda la UI se construye **por código en runtime**
-> (`Assets/Scripts/AppBootstrap.cs`), no hay prefabs de pantallas para arrastrar. En modo
+> (`Assets/Scripts/AppBootstrap.*.cs`), no hay prefabs de pantallas para arrastrar. En modo
 > edición (sin Play) la escena se ve vacía — es normal. Para inspeccionar una pantalla sin
 > ejecutar, usar el menú **`ARDiabetes ▸ Preview ▸ <pantalla>`** (se ve en la pestaña Game).
 
@@ -113,7 +113,7 @@ ARDiabetes/
 
 | Script | Rol |
 |---|---|
-| `AppBootstrap.cs` | El corazón de la app. Construye **todas** las pantallas por código (Inicio, Bienvenida, Perfil, Menú, Libro Fisiológico: Temas/Detalle/AR). Un método `Build...()` por pantalla. |
+| `AppBootstrap.*.cs` | El corazón de la app: construye **todas** las pantallas por código, un método `Build...()` por pantalla. Repartido en varios archivos `partial class AppBootstrap` por responsabilidad (mismo comportamiento, solo organización) — ver tabla siguiente. |
 | `UIKit.cs` | Mini design-system: paleta de colores, generador de sprites (rounded-rect, círculos, degradados) y fábricas de widgets (botones, cajas, texto, sombras) + helpers de layout responsivo por fracciones (`Frac`, `Cell`). |
 | `AppState.cs` | Estado persistente vía `PlayerPrefs` (edad elegida, estrellas, nivel, racha). |
 | `Carousel.cs` | Carrusel de onboarding: swipe con snap, rubber-band, auto-avance, puntos indicadores. |
@@ -124,6 +124,21 @@ ARDiabetes/
 | `Spinner.cs` | Gira el modelo 3D sobre su eje. |
 | `ARController.cs` | Rig de AR real (ARCore): `ARSession` + `XROrigin` + `ARCameraManager`/`Background` + `ARTrackedImageManager`. **Una sola instancia compartida** para toda la app (tener una por libro confundía a ARCore a nivel nativo). Registra los marcadores de los 3 libros y `SetScope()` restringe cuáles puede detectar cada pantalla (un libro puntual, o todos en el escaneo genérico). Si el dispositivo no es compatible, cae automáticamente al `ModelViewer`. |
 | `BookDef.cs` | Estructura de datos con el contenido de un libro (título, color de acento, modelo 3D, temas, marcadores, narración). Permite que `AppBootstrap` construya las pantallas Temas/Detalle/AR de los 3 libros con el mismo código, en vez de repetirlo. |
+
+#### Los archivos `AppBootstrap.*.cs`
+
+| Archivo | Contiene |
+|---|---|
+| `AppBootstrap.cs` | Campos + ciclo de vida (`Start`/`Update`/`BuildAll`/preview del editor). |
+| `AppBootstrap.BookContent.cs` | `BuildBooks()` — **el contenido de los 3 libros**: modelo 3D, color, títulos, descripciones por edad, marcadores, quiz. Es el archivo a tocar para cambiar qué modelo/color va con cada libro (ver `Documentacion/Guia-Tecnica-Modelos-y-QR-ARDiabetes.pdf`). |
+| `AppBootstrap.UICore.cs` | Canvas raíz, navegación entre pantallas (`ShowOnly`), header (`HeaderBand`), barra inferior, toasts, avisos de recompensa, widgets compartidos (`ProgressBar`, `CircleBtn`). |
+| `AppBootstrap.Screens.Onboarding.cs` | Pantallas 1-4: Inicio, Bienvenida (carrusel), Perfil, Menú. |
+| `AppBootstrap.Screens.Progreso.cs` | Pantallas 7/7B/7C: Progreso, Insignias, Colección AR. |
+| `AppBootstrap.Screens.Config.cs` | Pantallas 8/9: Configuración, Ayuda. |
+| `AppBootstrap.Screens.Libros.cs` | Pantallas 5A/5B/5C — Temas → Detalle de cada libro (la Experiencia AR en sí vive en `.AR.cs`). |
+| `AppBootstrap.AR.cs` | Núcleo de la Experiencia AR (cámara/modelo anclado), narración y captura de foto. |
+| `AppBootstrap.Juegos.cs` | Pantalla 6: hub de Juegos y Retos + el quiz completo (Choice/Matching/MultiSelect). |
+| `AppBootstrap.Refs.cs` | Clases auxiliares `*Refs` (contenedores de referencias de UI por pantalla). |
 
 ---
 
