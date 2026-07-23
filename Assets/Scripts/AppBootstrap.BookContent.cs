@@ -15,8 +15,8 @@ namespace ARDiabetes
             books = new BookDef[3];
             books[0] = new BookDef
             {
-                Title = "Libro Fisiológico", Accent = UIKit.Fisio, HeroIcon = spPancreas,
-                Model = pancreasModel, ModelTint = UIKit.Hex("C86B6B"),
+                Title = "Libro Fisiológico", Accent = UIKit.Hex("DD5450"), HeroIcon = spPancreas,
+                Model = pancreasModel, ModelTint = UIKit.Hex("DD5450"),
                 TopicTitle = new[] { "¿Qué es la diabetes tipo 1?", "El páncreas", "Insulina y glucosa", "Cómo funciona" },
                 TopicSub = new[] { "Conoce la enfermedad", "El órgano de la insulina", "Cómo obtienes energía", "Todo trabaja en equipo" },
                 DescKids = new[]

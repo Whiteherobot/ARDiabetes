@@ -13,13 +13,19 @@ namespace ARDiabetes
         Spinner spinner;
         Camera cam;
         Transform holder;
-        const int Layer = 2; // Ignore Raycast (no se usa para 3D en esta app)
+        int Layer; // una layer DISTINTA por instancia (ver Create) — antes era una const compartida
 
-        public static ModelViewer Create(GameObject modelPrefab, Color tint)
+        /// <summary>slot 0/1/2 (uno por libro) -> layer 2/3/4, para que cada visor renderice SOLO su
+        /// propio modelo. Los 3 rigs comparten la misma posición en el mundo (todos lejos de la
+        /// escena real) — sin layers distintas, la cámara de cada visor terminaba renderizando los
+        /// 3 modelos superpuestos (bug real encontrado 2026-07-23: el páncreas se veía "multicolor"
+        /// porque en realidad eran el páncreas + el plato + el glucómetro apilados en el mismo punto).</summary>
+        public static ModelViewer Create(GameObject modelPrefab, Color tint, int slot = 0)
         {
             var rig = new GameObject("Model3DRig");
             rig.transform.position = new Vector3(0, -500, 0); // lejos, además solo se ve por RT
             var mv = rig.AddComponent<ModelViewer>();
+            mv.Layer = 2 + slot;
             mv.Build(modelPrefab, tint);
             return mv;
         }

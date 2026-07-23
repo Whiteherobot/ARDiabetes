@@ -44,7 +44,7 @@ namespace ARDiabetes
         bool imagesAdded;
         float userYaw;
         public bool autoSpin = true; // gira solo tipo "turntable", igual que el visor de respaldo (Spinner.cs)
-        public float autoSpinSpeed = 25f; // grados/seg
+        public float autoSpinSpeed = 35f; // grados/seg (antes 25 - poco perceptible con material mate)
         HashSet<string> scope; // null = sin filtro (ve cualquier marcador); usado para restringir el escaneo al libro actual
 
         // Panel de info anclado en el espacio 3D junto al modelo (no una tarjeta 2D encima de
@@ -140,6 +140,26 @@ namespace ARDiabetes
             {
                 if (stray != arCam) { Debug.Log("[AR] Destruyendo cámara fantasma: " + stray.name); Destroy(stray.gameObject); }
             }
+
+            // El modelo anclado no tenía NINGUNA luz direccional propia (solo el ambiente/skybox
+            // por defecto, que es prácticamente plano) — con material mate de un solo color, girar
+            // sin sombras/brillos que se muevan es imperceptible a simple vista (reportado como
+            // "los modelos no giran" en la predefensa 2026-07-23, aunque la rotación en código sí
+            // se aplica cada frame). Se cuelgan de la cámara AR (no del mundo) para que la luz
+            // siempre incida desde un ángulo consistente sin importar cómo esté orientado el marcador.
+            var keyLightGo = new GameObject("ModelKeyLight");
+            keyLightGo.transform.SetParent(camGo.transform, false);
+            var keyLight = keyLightGo.AddComponent<Light>();
+            keyLight.type = LightType.Directional;
+            keyLight.intensity = 1.3f;
+            keyLight.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
+
+            var fillLightGo = new GameObject("ModelFillLight");
+            fillLightGo.transform.SetParent(camGo.transform, false);
+            var fillLight = fillLightGo.AddComponent<Light>();
+            fillLight.type = LightType.Directional;
+            fillLight.intensity = 0.4f;
+            fillLight.transform.rotation = Quaternion.Euler(-25f, 150f, 0f);
 
             imgMgr = originGo.AddComponent<ARTrackedImageManager>();
             imgMgr.enabled = false;
@@ -246,6 +266,7 @@ namespace ARDiabetes
                 if (sh != null)
                 {
                     var mat = new Material(sh) { color = entry.Tint };
+                    mat.SetFloat("_Glossiness", 0.35f); // un brillo especular que se mueve al girar hace mucho más notorio el giro
                     foreach (var r in spawned.GetComponentsInChildren<Renderer>())
                     {
                         var mats = new Material[r.sharedMaterials.Length];

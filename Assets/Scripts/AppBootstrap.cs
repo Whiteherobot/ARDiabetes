@@ -34,6 +34,9 @@ namespace ARDiabetes
         [Header("Audio narración (12: 4 por libro)")]
         public AudioClip[] narracion;
         AudioSource audioSrc;
+        [Header("Música de fondo")]
+        public AudioClip musicaFondo;
+        AudioSource bgAudioSrc;
         [Header("Marcadores AR (QR) — 4 por libro, Fisiológico/Nutricional/Clínico")]
         public Texture2D[] markersFisio, markersNutri, markersClinico;
 
@@ -111,6 +114,19 @@ namespace ARDiabetes
             if (font != null) UIKit.Font = font;
             audioSrc = gameObject.AddComponent<AudioSource>();
             audioSrc.playOnAwake = false;
+            // Cama musical de fondo, separada de audioSrc (narración) para que pausar/reanudar una
+            // no afecte a la otra. Un solo AudioSource para toda la app (no por pantalla): arranca
+            // una vez y sigue sonando en loop mientras se navega, igual que en cualquier app similar.
+            bgAudioSrc = gameObject.AddComponent<AudioSource>();
+            bgAudioSrc.playOnAwake = false;
+            bgAudioSrc.loop = true;
+            bgAudioSrc.volume = 0.35f;
+            bgAudioSrc.spatialBlend = 0f;
+            if (musicaFondo != null)
+            {
+                bgAudioSrc.clip = musicaFondo;
+                if (!AppState.Muted) bgAudioSrc.Play();
+            }
             mainCam = Camera.main;
             // Se guarda para recién mostrar el toast cuando exista UI (ver InitialBuild): acá el
             // Canvas todavía no se construyó, así que ShowReward no tendría dónde pintarlo.
@@ -118,7 +134,7 @@ namespace ARDiabetes
             BuildBooks();
 
             for (int b = 0; b < 3; b++)
-                if (books[b].Model != null) modelViewers[b] = ModelViewer.Create(books[b].Model, books[b].ModelTint);
+                if (books[b].Model != null) modelViewers[b] = ModelViewer.Create(books[b].Model, books[b].ModelTint, b);
 
             // Un único rig de AR (ARSession/cámara) para toda la app: crear uno por libro causaba que
             // ARCore devolviera "camera was passed NULL" al tener varias sesiones nativas compitiendo

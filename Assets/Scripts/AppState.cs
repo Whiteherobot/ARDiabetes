@@ -244,11 +244,11 @@ namespace ARDiabetes
         // Índice = bit en KeyBonusMask (ver comentario arriba). Coleccionable desde la pantalla Insignias.
         public static readonly BadgeDef[] Badges = new[]
         {
-            new BadgeDef{ Title = "Corazón sabio",     Desc = "Completa el Libro Fisiológico",                   Color = UIKit.Fisio  },
+            new BadgeDef{ Title = "Corazón sabio",     Desc = "Completa el Libro Fisiológico",                   Color = UIKit.Hex("DD5450")  },
             new BadgeDef{ Title = "Plato saludable",    Desc = "Completa el Libro Nutricional",                   Color = UIKit.Nutri  },
             new BadgeDef{ Title = "Doctor junior",      Desc = "Completa el Libro Clínico",                       Color = UIKit.Clin   },
             new BadgeDef{ Title = "Diabetes Experto",   Desc = "Completa los 3 libros",                           Color = UIKit.Prog   },
-            new BadgeDef{ Title = "Genio Fisiológico",  Desc = "Responde bien los 3 juegos del Libro Fisiológico", Color = UIKit.Fisio  },
+            new BadgeDef{ Title = "Genio Fisiológico",  Desc = "Responde bien los 3 juegos del Libro Fisiológico", Color = UIKit.Hex("DD5450")  },
             new BadgeDef{ Title = "Genio Nutricional",  Desc = "Responde bien los 3 juegos del Libro Nutricional", Color = UIKit.Nutri  },
             new BadgeDef{ Title = "Genio Clínico",      Desc = "Responde bien los 3 juegos del Libro Clínico",     Color = UIKit.Clin   },
             new BadgeDef{ Title = "Explorador AR",      Desc = "Escanea las 12 páginas en realidad aumentada",     Color = UIKit.Scan   },

@@ -230,7 +230,7 @@ namespace ARDiabetes
 
             // ---- Grid de tiles ----
             string[] labels = { "Libro\nFisiológico", "Libro\nNutricional", "Libro\nClínico", "Escanear\nPágina AR", "Juegos\ny Retos", "Progreso" };
-            Color[] colors = { UIKit.Fisio, UIKit.Nutri, UIKit.Clin, UIKit.Scan, UIKit.Juegos, UIKit.Prog };
+            Color[] colors = { UIKit.Hex("DD5450"), UIKit.Nutri, UIKit.Clin, UIKit.Scan, UIKit.Juegos, UIKit.Prog };
             Sprite[] icons = { spIconFisio, spIconNutri, spIconClinico, spIconScan, spIconJuegos, spIconProgreso };
 
             float gx = 0.03f, gy = 0.03f;

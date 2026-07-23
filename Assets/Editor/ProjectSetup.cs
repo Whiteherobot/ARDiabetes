@@ -89,6 +89,9 @@ public static class ProjectSetup
             if (boot.narracion[i] == null) Debug.LogWarning($"[ProjectSetup] narracion_{i}.wav no encontrado");
         }
 
+        boot.musicaFondo = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Musica/musica_fondo.wav");
+        if (boot.musicaFondo == null) Debug.LogWarning("[ProjectSetup] musica_fondo.wav no encontrado");
+
         boot.markersFisio = LoadMarkers("qr_diabetes", "qr_pancreas", "qr_insulina", "qr_funciona");
         boot.markersNutri = LoadMarkers("qr_nutri_plato", "qr_nutri_carbohidratos", "qr_nutri_recomendados", "qr_nutri_habitos");
         boot.markersClinico = LoadMarkers("qr_clinico_insulina", "qr_clinico_sintomas", "qr_clinico_monitoreo", "qr_clinico_cuidados");

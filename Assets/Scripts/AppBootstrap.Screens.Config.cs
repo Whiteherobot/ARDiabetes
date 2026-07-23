@@ -21,7 +21,16 @@ namespace ARDiabetes
                 icProfile, UIKit.Blue, () => ShowOnly(pPerfil));
             var muteSub = ConfigRow(p, 1, 3, y0, y1, "Sonido y narración",
                 AppState.Muted ? "Silenciado · toca para activar" : "Activado · toca para silenciar",
-                icAudio, UIKit.Nutri, () => { AppState.Muted = !AppState.Muted; RefreshConfig(); });
+                icAudio, UIKit.Nutri, () =>
+                {
+                    AppState.Muted = !AppState.Muted;
+                    if (bgAudioSrc != null)
+                    {
+                        if (AppState.Muted) bgAudioSrc.Pause();
+                        else bgAudioSrc.UnPause();
+                    }
+                    RefreshConfig();
+                });
             ConfigRow(p, 2, 3, y0, y1, "Reiniciar progreso", "Borra estrellas, temas vistos y racha",
                 icRotate, UIKit.Scan, () => { AppState.ResetProgress(); RefreshConfig(); RefreshProgreso(); Toast("Progreso reiniciado"); });
 

@@ -48,7 +48,7 @@ namespace ARDiabetes
             var bookFill = new Image[3];
             var bookCount = new TMP_Text[3];
             string[] bookLabels = { "Libro Fisiológico", "Libro Nutricional", "Libro Clínico" };
-            Color[] bookColors = { UIKit.Fisio, UIKit.Nutri, UIKit.Clin };
+            Color[] bookColors = { UIKit.Hex("DD5450"), UIKit.Nutri, UIKit.Clin };
             float rowsY0 = land ? 0.42f : 0.435f, rowsY1 = land ? 0.575f : 0.655f;
             for (int i = 0; i < 3; i++)
             {
